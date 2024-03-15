@@ -522,7 +522,7 @@ checksum = "c3c8dda44ff03a2f238717214da50f65d5a53b45cd213a7370424ffdb6fae815"
 [[package]]
 name = "n32g4"
 version = "0.1.0"
-source = "git+https://github.com/Redux-Robotics/n32g4.git#549fb3dc7896d5eeef8f5580461842e18af86a01"
+source = "git+ssh://git@github.com/Redux-Robotics/n32g4.git#549fb3dc7896d5eeef8f5580461842e18af86a01"
 dependencies = [
  "cortex-m",
  "cortex-m-rt",
