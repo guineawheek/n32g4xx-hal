@@ -137,7 +137,7 @@ impl Pins<pac::I2C1>
     const REMAP: bool = true;
 }
 
-impl Pins<pac::I2C1>
+impl Pins<pac::I2C2>
     for (
         gpio::PB10<Alternate<OpenDrain>>,
         gpio::PB11<Alternate<OpenDrain>>,
@@ -170,7 +170,7 @@ i2c! { pac::I2C4: I2c4 }
 
 impl<PINS> I2c<I2C1, PINS> {
     /// Creates a generic I2C2 object on pins PB10 and PB11 using the embedded-hal `BlockingI2c` trait.
-    pub fn i2c2<M: Into<Mode>>(i2c: I2C1, pins: PINS, mode: M, clocks: &Clocks) -> Self
+    pub fn i2c1<M: Into<Mode>>(i2c: I2C1, pins: PINS, mode: M, clocks: &Clocks) -> Self
     where
         PINS: Pins<I2C1>,
     {
@@ -268,7 +268,7 @@ impl<I2C: Instance,PINS> I2c<I2C,PINS> {
                 let ccr = (clock / (frequency.raw() * 2)).max(4);
 
                 // Set clock to standard mode with appropriate parameters for selected speed
-                self.i2c.clkctrl().write(|w| unsafe {
+                self.i2c.clkctrl().modify(|_,w| unsafe {
                     w.fsmode()
                         .clear_bit()
                         .duty()

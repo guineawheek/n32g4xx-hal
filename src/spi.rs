@@ -1,4 +1,4 @@
-use core::marker::PhantomData;
+use core::marker::{ConstParamTy, PhantomData};
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::Ordering;
 use core::sync::atomic;
@@ -24,6 +24,14 @@ pub enum Phase {
     CaptureOnFirstTransition,
     /// Data in "captured" on the second clock transition
     CaptureOnSecondTransition,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ConstParamTy)]
+pub enum TransferMode {
+    TransferModeNormal,
+    TransferModeBidirectional,
+    TransferModeRecieveOnly,
+    TransferModeTransmitOnly
 }
 
 /// SPI mode
@@ -120,13 +128,6 @@ pub enum CFlag {
     CrcError = 1 << 4,
 }
 
-/// Normal mode - RX and TX pins are independent
-#[allow(non_upper_case_globals)]
-pub const TransferModeNormal: bool = false;
-/// BIDI mode - use TX pin as RX then spi receive data
-#[allow(non_upper_case_globals)]
-pub const TransferModeBidi: bool = true;
-
 pub trait FrameSize: Copy + Default {
     const DFF: bool;
 }
@@ -155,20 +156,20 @@ pub struct Inner<SPI: Instance> {
 
 /// Spi in Master mode
 #[derive(Debug)]
-pub struct Spi<SPI: Instance, const BIDI: bool = false, W = u8> {
+pub struct Spi<SPI: Instance, const XFER_MODE : TransferMode = {TransferMode::TransferModeNormal}, W = u8> {
     inner: Inner<SPI>,
     pins: (SPI::Sck, SPI::Miso, SPI::Mosi),
     _operation: PhantomData<W>,
 }
 
-impl<SPI: Instance, const BIDI: bool, W> Deref for Spi<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W> Deref for Spi<SPI, XFER_MODE, W> {
     type Target = Inner<SPI>;
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W> DerefMut for Spi<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W> DerefMut for Spi<SPI, XFER_MODE, W> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
@@ -176,20 +177,20 @@ impl<SPI: Instance, const BIDI: bool, W> DerefMut for Spi<SPI, BIDI, W> {
 
 /// Spi in Slave mode
 #[derive(Debug)]
-pub struct SpiSlave<SPI: Instance, const BIDI: bool = false, W = u8> {
+pub struct SpiSlave<SPI: Instance, const XFER_MODE : TransferMode = {TransferMode::TransferModeNormal}, W = u8> {
     inner: Inner<SPI>,
     pins: (SPI::Sck, SPI::Miso, SPI::Mosi, Option<SPI::Nss>),
     _operation: PhantomData<W>,
 }
 
-impl<SPI: Instance, const BIDI: bool, W> Deref for SpiSlave<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W> Deref for SpiSlave<SPI, XFER_MODE, W> {
     type Target = Inner<SPI>;
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W> DerefMut for SpiSlave<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W> DerefMut for SpiSlave<SPI, XFER_MODE, W> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
@@ -211,8 +212,8 @@ pub trait Instance:
 // Implemented by all SPI instances
 macro_rules! spi {
     ($SPI:ty: $Spi:ident, $SpiSlave:ident) => {
-        pub type $Spi<const BIDI: bool = false, W = u8> = Spi<$SPI, BIDI, W>;
-        pub type $SpiSlave<const BIDI: bool = false, W = u8> = SpiSlave<$SPI, BIDI, W>;
+        pub type $Spi<const XFER_MODE : TransferMode = {TransferMode::TransferModeNormal}, W = u8> = Spi<$SPI, XFER_MODE, W>;
+        pub type $SpiSlave<const XFER_MODE : TransferMode = {TransferMode::TransferModeNormal}, W = u8> = SpiSlave<$SPI, XFER_MODE, W>;
 
         impl Instance for $SPI {
             fn ptr() -> *const spi1::RegisterBlock {
@@ -237,7 +238,8 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, false, u8>;
+        afio: &mut pac::AFIO,
+    ) -> Spi<Self, {TransferMode::TransferModeNormal}, u8>;
 
     fn spi_bidi<RMP : Remap,
     SCK: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Sck>,
@@ -247,9 +249,23 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, true, u8>
+        afio: &mut pac::AFIO,
+    ) -> Spi<Self, {TransferMode::TransferModeBidirectional}, u8>
     where
         NoPin: Into<Self::Miso>;
+
+    fn spi_rxonly<RMP : Remap,
+    SCK: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Sck>,
+    MISO: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Miso>>(
+        self,
+        pins: (SCK,MISO),
+        mode: impl Into<Mode>,
+        freq: Hertz,
+        clocks: &Clocks,
+        afio: &mut pac::AFIO,
+    ) -> Spi<Self, {TransferMode::TransferModeRecieveOnly}, u8>
+    where
+        NoPin: Into<Self::Mosi>;
 
     fn spi_slave<RMP : Remap,
     SCK: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Sck>,
@@ -264,7 +280,7 @@ pub trait SpiExt: Sized + Instance {
             Option<NSS>
         ),
         mode: impl Into<Mode>,
-    ) -> SpiSlave<Self, false, u8>;
+    ) -> SpiSlave<Self, {TransferMode::TransferModeNormal}, u8>;
 
     fn spi_bidi_slave(
         self,
@@ -274,7 +290,7 @@ pub trait SpiExt: Sized + Instance {
             Option<Self::Nss>,
         ),
         mode: impl Into<Mode>,
-    ) -> SpiSlave<Self, true, u8>
+    ) -> SpiSlave<Self, {TransferMode::TransferModeBidirectional}, u8>
     where
         NoPin: Into<Self::Mosi>;
 }
@@ -293,10 +309,12 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, false, u8> {
+        afio: &mut pac::AFIO,
+    ) -> Spi<Self, {TransferMode::TransferModeNormal}, u8> {
+        RMP::remap(afio);
         Spi::new(self, pins, mode, freq, clocks)
     }
-    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master BIDI mode.
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master XFER_MODE mode.
     ///
     /// # Note
     /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
@@ -309,11 +327,36 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-    ) -> Spi<Self, true, u8>
+        afio: &mut pac::AFIO,
+    ) -> Spi<Self, {TransferMode::TransferModeBidirectional}, u8>
     where
         NoPin: Into<Self::Miso>,
     {
+        RMP::remap(afio);
         Spi::new_bidi(self, pins, mode, freq, clocks)
+    }
+
+        /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master XFER_MODE mode.
+    ///
+    /// # Note
+    /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
+    /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
+    fn spi_rxonly<RMP : Remap,
+    SCK: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Sck>,
+    MISO: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Miso>>(
+        self,
+        pins: (SCK,MISO),
+        mode: impl Into<Mode>,
+        freq: Hertz,
+        clocks: &Clocks,
+        afio: &mut pac::AFIO,
+
+    ) -> Spi<Self, {TransferMode::TransferModeRecieveOnly}, u8>
+    where
+        NoPin: Into<Self::Mosi>,
+    {
+        RMP::remap(afio);
+        Spi::new_rxonly(self, pins, mode, freq, clocks)
     }
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave Normal mode.
     ///
@@ -333,10 +376,10 @@ impl<SPI: Instance> SpiExt for SPI {
                 Option<NSS>
             ),
         mode: impl Into<Mode>,
-    ) -> SpiSlave<Self, false, u8> {
+    ) -> SpiSlave<Self, {TransferMode::TransferModeNormal}, u8> {
         SpiSlave::new(self, pins, mode)
     }
-    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave BIDI mode.
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave XFER_MODE mode.
     ///
     /// # Note
     /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
@@ -349,7 +392,7 @@ impl<SPI: Instance> SpiExt for SPI {
             Option<Self::Nss>,
         ),
         mode: impl Into<Mode>,
-    ) -> SpiSlave<Self, true, u8>
+    ) -> SpiSlave<Self, {TransferMode::TransferModeBidirectional}, u8>
     where
         NoPin: Into<Self::Mosi>,
     {
@@ -357,12 +400,28 @@ impl<SPI: Instance> SpiExt for SPI {
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W: FrameSize> Spi<SPI, XFER_MODE, W> {
     pub fn init(self) -> Self {
         self.spi.ctrl1().modify(|_, w| {
             // bidimode: 2-line or 1-line unidirectional
-            w.bidirmode().bit(BIDI);
-            w.bidiroen().bit(BIDI);
+            w.bidirmode().bit(XFER_MODE == TransferMode::TransferModeBidirectional);
+            w.bidiroen().bit(XFER_MODE == TransferMode::TransferModeBidirectional);
+            // data frame size
+            w.datff().bit(W::DFF);
+            // spe: enable the SPI bus
+            w.spien().bit(XFER_MODE != TransferMode::TransferModeRecieveOnly)
+        });
+
+        self
+    }
+}
+
+impl<SPI: Instance, const XFER_MODE : TransferMode, W: FrameSize> SpiSlave<SPI, XFER_MODE, W> {
+    pub fn init(self) -> Self {
+        self.spi.ctrl1().modify(|_, w| {
+            // bidimode: 2-line or 1-line unidirectional
+            w.bidirmode().bit(XFER_MODE == TransferMode::TransferModeBidirectional);
+            w.bidiroen().bit(XFER_MODE == TransferMode::TransferModeBidirectional);
             // data frame size
             w.datff().bit(W::DFF);
             // spe: enable the SPI bus
@@ -373,87 +432,71 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
-    pub fn init(self) -> Self {
-        self.spi.ctrl1().modify(|_, w| {
-            // bidimode: 2-line or 1-line unidirectional
-            w.bidirmode().bit(BIDI);
-            w.bidiroen().bit(BIDI);
-            // data frame size
-            w.datff().bit(W::DFF);
-            // spe: enable the SPI bus
-            w.spien().set_bit()
-        });
-
-        self
-    }
-}
-
-impl<SPI: Instance, W: FrameSize> Spi<SPI, false, W> {
-    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, true, W> {
+impl<SPI: Instance, W: FrameSize> Spi<SPI, {TransferMode::TransferModeNormal}, W> {
+    pub fn to_bidi_transfer_mode(self) -> Spi<SPI, {TransferMode::TransferModeBidirectional}, W> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, W: FrameSize> Spi<SPI, true, W> {
-    pub fn to_normal_transfer_mode(self) -> Spi<SPI, false, W> {
+impl<SPI: Instance, W: FrameSize> Spi<SPI, {TransferMode::TransferModeBidirectional}, W> {
+    pub fn to_normal_transfer_mode(self) -> Spi<SPI, {TransferMode::TransferModeNormal}, W> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, W: FrameSize> SpiSlave<SPI, false, W> {
-    pub fn to_bidi_transfer_mode(self) -> SpiSlave<SPI, true, W> {
+impl<SPI: Instance, W: FrameSize> SpiSlave<SPI, {TransferMode::TransferModeNormal}, W> {
+    pub fn to_bidi_transfer_mode(self) -> SpiSlave<SPI, {TransferMode::TransferModeBidirectional}, W> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance, W: FrameSize> SpiSlave<SPI, true, W> {
-    pub fn to_normal_transfer_mode(self) -> SpiSlave<SPI, false, W> {
+impl<SPI: Instance, W: FrameSize> SpiSlave<SPI, {TransferMode::TransferModeBidirectional}, W> {
+    pub fn to_normal_transfer_mode(self) -> SpiSlave<SPI, {TransferMode::TransferModeNormal}, W> {
         self.into_mode()
     }
 }
 
-impl<SPI, const BIDI: bool> Spi<SPI, BIDI, u8>
+impl<SPI, const XFER_MODE : TransferMode> Spi<SPI, XFER_MODE, u8>
 where
     SPI: Instance,
 {
     /// Converts from 8bit dataframe to 16bit.
-    pub fn frame_size_16bit(self) -> Spi<SPI, BIDI, u16> {
+    pub fn frame_size_16bit(self) -> Spi<SPI, XFER_MODE, u16> {
         self.into_mode()
     }
 }
 
-impl<SPI, const BIDI: bool> Spi<SPI, BIDI, u16>
+impl<SPI, const XFER_MODE : TransferMode> Spi<SPI, XFER_MODE, u16>
 where
     SPI: Instance,
 {
     /// Converts from 16bit dataframe to 8bit.
-    pub fn frame_size_8bit(self) -> Spi<SPI, BIDI, u8> {
+    pub fn frame_size_8bit(self) -> Spi<SPI, XFER_MODE, u8> {
         self.into_mode()
     }
 }
 
-impl<SPI, const BIDI: bool> SpiSlave<SPI, BIDI, u8>
+impl<SPI, const XFER_MODE : TransferMode> SpiSlave<SPI, XFER_MODE, u8>
 where
     SPI: Instance,
 {
     /// Converts from 8bit dataframe to 16bit.
-    pub fn frame_size_16bit(self) -> SpiSlave<SPI, BIDI, u16> {
+    pub fn frame_size_16bit(self) -> SpiSlave<SPI, XFER_MODE, u16> {
         self.into_mode()
     }
 }
 
-impl<SPI, const BIDI: bool> SpiSlave<SPI, BIDI, u16>
+impl<SPI, const XFER_MODE : TransferMode> SpiSlave<SPI, XFER_MODE, u16>
 where
     SPI: Instance,
 {
     /// Converts from 16bit dataframe to 8bit.
-    pub fn frame_size_8bit(self) -> SpiSlave<SPI, BIDI, u8> {
+    pub fn frame_size_8bit(self) -> SpiSlave<SPI, XFER_MODE, u8> {
         self.into_mode()
     }
 }
 
-impl<SPI: Instance> Spi<SPI, false, u8> {
+impl<SPI: Instance> Spi<SPI, {TransferMode::TransferModeNormal}, u8> {
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master Normal mode.
     ///
     /// # Note
@@ -482,8 +525,38 @@ impl<SPI: Instance> Spi<SPI, false, u8> {
     }
 }
 
-impl<SPI: Instance> Spi<SPI, true, u8> {
-    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master BIDI mode.
+impl<SPI: Instance> Spi<SPI, {TransferMode::TransferModeRecieveOnly}, u8> {
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master XFER_MODE mode.
+    ///
+    /// # Note
+    /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
+    /// Otherwise it may lead to the 'wrong last bit in every received byte' problem.
+    pub fn new_rxonly(
+        spi: SPI,
+        pins: (impl Into<SPI::Sck>, impl Into<SPI::Miso>),
+        mode: impl Into<Mode>,
+        freq: Hertz,
+        clocks: &Clocks,
+    ) -> Self
+    where
+        NoPin: Into<SPI::Mosi>,
+    {
+        unsafe {
+            SPI::enable_unchecked();
+            SPI::reset_unchecked();
+        }
+
+        let pins = (pins.0.into(),  pins.1.into(),NoPin::new().into());
+        
+        Self::_new(spi, pins)
+            .pre_init(mode.into(), freq, SPI::clock(clocks))
+            .init()
+    }
+
+}
+
+impl<SPI: Instance> Spi<SPI, {TransferMode::TransferModeBidirectional}, u8> {
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Master XFER_MODE mode.
     ///
     /// # Note
     /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
@@ -511,7 +584,7 @@ impl<SPI: Instance> Spi<SPI, true, u8> {
     }
 }
 
-impl<SPI: Instance> SpiSlave<SPI, false, u8> {
+impl<SPI: Instance> SpiSlave<SPI, {TransferMode::TransferModeNormal}, u8> {
     /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave Normal mode.
     ///
     /// # Note
@@ -542,8 +615,8 @@ impl<SPI: Instance> SpiSlave<SPI, false, u8> {
     }
 }
 
-impl<SPI: Instance> SpiSlave<SPI, true, u8> {
-    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave BIDI mode.
+impl<SPI: Instance> SpiSlave<SPI, {TransferMode::TransferModeBidirectional}, u8> {
+    /// Enables the SPI clock, resets the peripheral, sets `Alternate` mode for `pins` and initialize the peripheral as SPI Slave XFER_MODE mode.
     ///
     /// # Note
     /// Depending on `freq` you may need to set GPIO speed for `pins` (the `Speed::Low` is default for GPIO) before create `Spi` instance.
@@ -567,21 +640,21 @@ impl<SPI: Instance> SpiSlave<SPI, true, u8> {
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W> Spi<SPI, XFER_MODE, W> {
     #[allow(clippy::type_complexity)]
     pub fn release(self) -> (SPI, (SPI::Sck, SPI::Miso, SPI::Mosi)) {
         (self.inner.spi, self.pins)
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W> SpiSlave<SPI, XFER_MODE, W> {
     #[allow(clippy::type_complexity)]
     pub fn release(self) -> (SPI, (SPI::Sck, SPI::Miso, SPI::Mosi, Option<SPI::Nss>)) {
         (self.inner.spi, self.pins)
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W> Spi<SPI, XFER_MODE, W> {
     fn _new(spi: SPI, pins: (SPI::Sck, SPI::Miso, SPI::Mosi)) -> Self {
         Self {
             inner: Inner::new(spi),
@@ -591,14 +664,14 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
     }
 
     /// Convert the spi to another mode.
-    fn into_mode<const BIDI2: bool, W2: FrameSize>(self) -> Spi<SPI, BIDI2, W2> {
+    fn into_mode<const XFER_MODE2: TransferMode, W2: FrameSize>(self) -> Spi<SPI, XFER_MODE2, W2> {
         let mut spi = Spi::_new(self.inner.spi, self.pins);
         spi.enable(false);
         spi.init()
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W> SpiSlave<SPI, XFER_MODE, W> {
     fn _new(spi: SPI, pins: (SPI::Sck, SPI::Miso, SPI::Mosi, Option<SPI::Nss>)) -> Self {
         Self {
             inner: Inner::new(spi),
@@ -608,18 +681,18 @@ impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
     }
 
     /// Convert the spi to another mode.
-    fn into_mode<const BIDI2: bool, W2: FrameSize>(self) -> SpiSlave<SPI, BIDI2, W2> {
+    fn into_mode<const XFER_MODE2: TransferMode, W2: FrameSize>(self) -> SpiSlave<SPI, XFER_MODE2, W2> {
         let mut spi = SpiSlave::_new(self.inner.spi, self.pins);
         spi.enable(false);
         spi.init()
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W> Spi<SPI, XFER_MODE, W> {
     /// Pre initializing the SPI bus.
     fn pre_init(self, mode: Mode, freq: Hertz, clock: Hertz) -> Self {
         // disable SS output
-        self.spi.ctrl2().write(|w| w.ssoen().clear_bit());
+        self.spi.ctrl2().modify(|_,w| w.ssoen().clear_bit());
 
         let br = match clock.raw() / freq.raw() {
             0 => unreachable!(),
@@ -633,7 +706,7 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
             _ => 0b111,
         };
 
-        self.spi.ctrl1().write(|w| {
+        self.spi.ctrl1().modify(|_,w| {
             w.clkpha().bit(mode.phase == Phase::CaptureOnSecondTransition);
             w.clkpol().bit(mode.polarity == Polarity::IdleHigh);
             // mstr: master configuration
@@ -645,7 +718,7 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
             w.ssmen().set_bit();
             // ssi: set nss high
             w.ssel().set_bit();
-            w.ronly().clear_bit();
+            w.ronly().bit(XFER_MODE == TransferMode::TransferModeRecieveOnly);
             // dff: 8 bit frames
             w.datff().clear_bit()
         });
@@ -654,10 +727,10 @@ impl<SPI: Instance, const BIDI: bool, W> Spi<SPI, BIDI, W> {
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W> SpiSlave<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W> SpiSlave<SPI, XFER_MODE, W> {
     /// Pre initializing the SPI bus.
     fn pre_init(self, mode: Mode) -> Self {
-        self.spi.ctrl1().write(|w| {
+        self.spi.ctrl1().modify(|_,w| {
             w.clkpha().bit(mode.phase == Phase::CaptureOnSecondTransition);
             w.clkpol().bit(mode.polarity == Polarity::IdleHigh);
             // mstr: slave configuration
@@ -853,7 +926,7 @@ impl<SPI: Instance> crate::ReadFlags for Inner<SPI> {
 
 // Spi DMA
 
-impl<SPI: Instance, const BIDI: bool> Spi<SPI, BIDI, u8> {
+impl<SPI: Instance, const XFER_MODE : TransferMode> Spi<SPI, XFER_MODE, u8> {
     pub fn use_dma(self) -> DmaBuilder<SPI> {
         DmaBuilder {
             spi: self.inner.spi,
@@ -861,7 +934,7 @@ impl<SPI: Instance, const BIDI: bool> Spi<SPI, BIDI, u8> {
     }
 }
 
-impl<SPI: Instance, const BIDI: bool> SpiSlave<SPI, BIDI, u8> {
+impl<SPI: Instance, const XFER_MODE : TransferMode> SpiSlave<SPI, XFER_MODE, u8> {
     pub fn use_dma(self) -> DmaBuilder<SPI> {
         DmaBuilder {
             spi: self.inner.spi,
@@ -901,16 +974,16 @@ impl<SPI: Instance> DmaBuilder<SPI> {
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W: FrameSize> Spi<SPI, XFER_MODE, W> {
     pub fn read_nonblocking(&mut self) -> nb::Result<W, Error> {
-        if BIDI {
+        if XFER_MODE == TransferMode::TransferModeBidirectional {
             self.bidi_input();
         }
         self.check_read()
     }
 
     pub fn write_nonblocking(&mut self, byte: W) -> nb::Result<(), Error> {
-        if BIDI {
+        if XFER_MODE == TransferMode::TransferModeBidirectional {
             self.bidi_output();
         }
         self.check_send(byte)
@@ -941,7 +1014,7 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     }
 
     pub fn write(&mut self, words: &[W]) -> Result<(), Error> {
-        if BIDI {
+        if XFER_MODE == TransferMode::TransferModeBidirectional {
             self.bidi_output();
             for word in words {
                 nb::block!(self.check_send(*word))?;
@@ -957,7 +1030,7 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     }
 
     pub fn write_iter(&mut self, words: impl IntoIterator<Item = W>) -> Result<(), Error> {
-        if BIDI {
+        if XFER_MODE == TransferMode::TransferModeBidirectional {
             self.bidi_output();
             for word in words.into_iter() {
                 nb::block!(self.check_send(word))?;
@@ -973,11 +1046,17 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     }
 
     pub fn read(&mut self, words: &mut [W]) -> Result<(), Error> {
-        if BIDI {
+        if XFER_MODE == TransferMode::TransferModeBidirectional {
             self.bidi_input();
             for word in words {
                 *word = nb::block!(self.check_read())?;
             }
+        } else if XFER_MODE == TransferMode::TransferModeRecieveOnly {
+            self.spi.ctrl1().modify(|_,w| w.spien().set_bit());
+            for word in words {
+                *word = nb::block!(self.check_read())?;
+            }
+            self.spi.ctrl1().modify(|_,w| w.spien().clear_bit());
         } else {
             for word in words {
                 nb::block!(self.check_send(W::default()))?;
@@ -989,16 +1068,16 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> Spi<SPI, BIDI, W> {
     }
 }
 
-impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE : TransferMode, W: FrameSize> SpiSlave<SPI, XFER_MODE, W> {
     pub fn read_nonblocking(&mut self) -> nb::Result<W, Error> {
-        if BIDI {
+        if XFER_MODE == TransferMode::TransferModeBidirectional {
             self.bidi_input();
         }
         self.check_read()
     }
 
     pub fn write_nonblocking(&mut self, byte: W) -> nb::Result<(), Error> {
-        if BIDI {
+        if XFER_MODE == TransferMode::TransferModeBidirectional {
             self.bidi_output();
         }
         self.check_send(byte)
@@ -1029,7 +1108,7 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     }
 
     pub fn write(&mut self, words: &[W]) -> Result<(), Error> {
-        if BIDI {
+        if XFER_MODE == TransferMode::TransferModeBidirectional {
             self.bidi_output();
             for word in words {
                 nb::block!(self.check_send(*word))?;
@@ -1045,7 +1124,7 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     }
 
     pub fn read(&mut self, words: &mut [W]) -> Result<(), Error> {
-        if BIDI {
+        if XFER_MODE == TransferMode::TransferModeBidirectional {
             self.bidi_input();
             for word in words {
                 *word = nb::block!(self.check_read())?;
@@ -1061,38 +1140,39 @@ impl<SPI: Instance, const BIDI: bool, W: FrameSize> SpiSlave<SPI, BIDI, W> {
     }
 }
 
-pub type SpiTxDma<SPI, const BIDI : bool, CHANNEL> = TxDma<Spi<SPI, BIDI, u8>, CHANNEL>;
-pub type SpiRxDma<SPI, const BIDI : bool, CHANNEL> = RxDma<Spi<SPI, BIDI, u8>, CHANNEL>;
-pub type SpiRxTxDma<SPI, const BIDI : bool, RXCHANNEL, TXCHANNEL> =
-    RxTxDma<Spi<SPI, BIDI, u8>, RXCHANNEL, TXCHANNEL>;
+pub type SpiTxDma<SPI, const XFER_MODE : TransferMode, CHANNEL> = TxDma<Spi<SPI, XFER_MODE, u8>, CHANNEL>;
+pub type SpiRxDma<SPI, const XFER_MODE : TransferMode, CHANNEL> = RxDma<Spi<SPI, XFER_MODE, u8>, CHANNEL>;
+pub type SpiRxTxDma<SPI, const XFER_MODE : TransferMode, RXCHANNEL, TXCHANNEL> =
+    RxTxDma<Spi<SPI, XFER_MODE, u8>, RXCHANNEL, TXCHANNEL>;
 
-pub trait SpiDma<PER : Instance, const BIDI : bool, RXCH : crate::dma::CompatibleChannel<PER,R> + crate::dma::DMAChannel, TXCH : crate::dma::CompatibleChannel<PER,W> + crate::dma::DMAChannel> {
+pub trait SpiDma<PER : Instance, const XFER_MODE : TransferMode, RXCH : crate::dma::CompatibleChannel<PER,R> + crate::dma::DMAChannel, TXCH : crate::dma::CompatibleChannel<PER,W> + crate::dma::DMAChannel> {
     fn with_rx_tx_dma(
         self,
         rxchannel: RXCH,
         txchannel: TXCH,
-    ) -> SpiRxTxDma<PER, BIDI, RXCH, TXCH>;
-    fn with_rx_dma(self, channel: RXCH) -> SpiRxDma<PER, BIDI, RXCH>;
-    fn with_tx_dma(self, channel: TXCH) -> SpiTxDma<PER, BIDI, TXCH>;
+    ) -> SpiRxTxDma<PER, XFER_MODE, RXCH, TXCH>;
+    fn with_rx_dma(self, channel: RXCH) -> SpiRxDma<PER, XFER_MODE, RXCH>;
+    fn with_tx_dma(self, channel: TXCH) -> SpiTxDma<PER, XFER_MODE, TXCH>;
 }
+
 macro_rules! spi_dma {
     ($SPIi:ty, $rxdma:ident, $txdma:ident, $rxtxdma:ident) => {
-        pub type $rxdma<const BIDI : bool, RXCH> = SpiRxDma<$SPIi, BIDI, RXCH>;
-        pub type $txdma<const BIDI : bool, TXCH> = SpiTxDma<$SPIi, BIDI, TXCH>;
-        pub type $rxtxdma<const BIDI : bool,RXCH,TXCH> = SpiRxTxDma<$SPIi, BIDI, RXCH, TXCH>;
+        pub type $rxdma<const XFER_MODE : TransferMode, RXCH> = SpiRxDma<$SPIi, XFER_MODE, RXCH>;
+        pub type $txdma<const XFER_MODE : TransferMode, TXCH> = SpiTxDma<$SPIi, XFER_MODE, TXCH>;
+        pub type $rxtxdma<const XFER_MODE : TransferMode,RXCH,TXCH> = SpiRxTxDma<$SPIi, XFER_MODE, RXCH, TXCH>;
 
-        impl<const BIDI : bool, RXCH,TXCH> SpiDma<$SPIi,BIDI,RXCH,TXCH> for Spi<$SPIi,BIDI,u8>  where
+        impl<const XFER_MODE : TransferMode, RXCH,TXCH> SpiDma<$SPIi,XFER_MODE,RXCH,TXCH> for Spi<$SPIi,XFER_MODE,u8>  where
         RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,
         TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel
         {
-            fn with_tx_dma(self, channel: TXCH) -> SpiTxDma<$SPIi, BIDI, TXCH> {
+            fn with_tx_dma(self, channel: TXCH) -> SpiTxDma<$SPIi, XFER_MODE, TXCH> {
                 self.spi.ctrl2().modify(|_, w| w.tdmaen().set_bit());
                 SpiTxDma {
                     payload: self,
                     channel,
                 }
             }
-            fn with_rx_dma(self, channel: RXCH) -> SpiRxDma<$SPIi, BIDI, RXCH>
+            fn with_rx_dma(self, channel: RXCH) -> SpiRxDma<$SPIi, XFER_MODE, RXCH>
             {
                self.spi.ctrl2().modify(|_, w| w.rdmaen().set_bit());
                SpiRxDma {
@@ -1104,7 +1184,7 @@ macro_rules! spi_dma {
                 self,
                 rxchannel: RXCH,
                 txchannel: TXCH,
-            ) -> SpiRxTxDma<$SPIi, BIDI, RXCH, TXCH> {
+            ) -> SpiRxTxDma<$SPIi, XFER_MODE, RXCH, TXCH> {
                 self.spi
                 .ctrl2()
                 .modify(|_, w| w.rdmaen().set_bit().tdmaen().set_bit());
@@ -1116,44 +1196,44 @@ macro_rules! spi_dma {
             }
         }
 
-        impl<const BIDI : bool,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> Transmit for SpiTxDma<$SPIi, BIDI, TXCH> {
+        impl<const XFER_MODE : TransferMode,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> Transmit for SpiTxDma<$SPIi, XFER_MODE, TXCH> {
             type TxChannel = TXCH;
             type ReceivedWord = u8;
         }
 
-        impl<const BIDI : bool,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel> Receive for SpiRxDma<$SPIi, BIDI, RXCH> {
+        impl<const XFER_MODE : TransferMode,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel> Receive for SpiRxDma<$SPIi, XFER_MODE, RXCH> {
             type RxChannel = RXCH;
             type TransmittedWord = u8;
         }
 
-        impl<const BIDI : bool,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> Transmit for SpiRxTxDma<$SPIi, BIDI, RXCH,TXCH> {
+        impl<const XFER_MODE : TransferMode,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> Transmit for SpiRxTxDma<$SPIi, XFER_MODE, RXCH,TXCH> {
             type TxChannel = TXCH;
             type ReceivedWord = u8;
         }
 
-        impl<const BIDI : bool,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> Receive for SpiRxTxDma<$SPIi, BIDI, RXCH,TXCH> {
+        impl<const XFER_MODE : TransferMode,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> Receive for SpiRxTxDma<$SPIi, XFER_MODE, RXCH,TXCH> {
             type RxChannel = RXCH;
             type TransmittedWord = u8;
         }
 
-        impl<const BIDI : bool, TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> SpiTxDma<$SPIi, BIDI, TXCH> {
-            pub fn release(self) -> (Spi<$SPIi, BIDI, u8>, TXCH) {
+        impl<const XFER_MODE : TransferMode, TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> SpiTxDma<$SPIi, XFER_MODE, TXCH> {
+            pub fn release(self) -> (Spi<$SPIi, XFER_MODE, u8>, TXCH) {
                 let SpiTxDma { payload, channel } = self;
                 payload.spi.ctrl2().modify(|_, w| w.tdmaen().clear_bit());
                 (payload, channel)
             }
         }
 
-        impl<const BIDI : bool, RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel> SpiRxDma<$SPIi, BIDI, RXCH> {
-            pub fn release(self) -> (Spi<$SPIi, BIDI, u8>, RXCH) {
+        impl<const XFER_MODE : TransferMode, RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel> SpiRxDma<$SPIi, XFER_MODE, RXCH> {
+            pub fn release(self) -> (Spi<$SPIi, XFER_MODE, u8>, RXCH) {
                 let SpiRxDma { payload, channel } = self;
                 payload.spi.ctrl2().modify(|_, w| w.rdmaen().clear_bit());
                 (payload, channel)
             }
         }
 
-        impl<const BIDI : bool, RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> SpiRxTxDma<$SPIi, BIDI, RXCH, TXCH> {
-            pub fn release(self) -> (Spi<$SPIi, BIDI, u8>, RXCH, TXCH) {
+        impl<const XFER_MODE : TransferMode, RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> SpiRxTxDma<$SPIi, XFER_MODE, RXCH, TXCH> {
+            pub fn release(self) -> (Spi<$SPIi, XFER_MODE, u8>, RXCH, TXCH) {
                 let SpiRxTxDma {
                     payload,
                     rxchannel,
@@ -1167,7 +1247,22 @@ macro_rules! spi_dma {
             }
         }
 
-        impl<const BIDI : bool,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> TransferPayload for SpiTxDma<$SPIi, BIDI, TXCH> {
+        impl<const XFER_MODE : TransferMode,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> TransferPayload for SpiTxDma<$SPIi, XFER_MODE, TXCH> {
+            fn start(&mut self) {
+                self.channel.start();
+                if XFER_MODE == TransferMode::TransferModeRecieveOnly {
+                    self.payload.enable(true);
+                }
+            }
+            fn stop(&mut self) {
+                self.channel.stop();
+                if XFER_MODE == TransferMode::TransferModeRecieveOnly {
+                    self.payload.enable(false);
+                }
+            }
+        }
+
+        impl<const XFER_MODE : TransferMode,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel> TransferPayload for SpiRxDma<$SPIi, XFER_MODE, RXCH> {
             fn start(&mut self) {
                 self.channel.start();
             }
@@ -1176,16 +1271,7 @@ macro_rules! spi_dma {
             }
         }
 
-        impl<const BIDI : bool,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel> TransferPayload for SpiRxDma<$SPIi, BIDI, RXCH> {
-            fn start(&mut self) {
-                self.channel.start();
-            }
-            fn stop(&mut self) {
-                self.channel.stop();
-            }
-        }
-
-        impl<const BIDI : bool,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> TransferPayload for SpiRxTxDma<$SPIi, BIDI,RXCH,TXCH> {
+        impl<const XFER_MODE : TransferMode,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> TransferPayload for SpiRxTxDma<$SPIi, XFER_MODE,RXCH,TXCH> {
             fn start(&mut self) {
                 self.rxchannel.start();
                 self.txchannel.start();
@@ -1196,7 +1282,7 @@ macro_rules! spi_dma {
             }
         }
 
-        impl<B, const BIDI : bool, RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel> crate::dma::ReadDma<B, u8> for SpiRxDma<$SPIi, BIDI, RXCH>
+        impl<B, const XFER_MODE : TransferMode, RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel> crate::dma::ReadDma<B, u8> for SpiRxDma<$SPIi, XFER_MODE, RXCH>
         where
             B: WriteBuffer<Word = u8>,
         {
@@ -1239,8 +1325,8 @@ macro_rules! spi_dma {
             }
         }
 
-        impl<B, const BIDI : bool,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> crate::dma::WriteDma<B, u8>
-            for SpiTxDma<$SPIi, BIDI, TXCH>
+        impl<B, const XFER_MODE : TransferMode,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> crate::dma::WriteDma<B, u8>
+            for SpiTxDma<$SPIi, XFER_MODE, TXCH>
         where
             B: ReadBuffer<Word = u8>,
         {
@@ -1283,8 +1369,8 @@ macro_rules! spi_dma {
             }
         }
 
-        impl<RXB, TXB, const BIDI: bool, RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> crate::dma::ReadWriteDma<RXB, TXB, u8>
-            for SpiRxTxDma<$SPIi, BIDI, RXCH, TXCH>
+        impl<RXB, TXB, const XFER_MODE : TransferMode, RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> crate::dma::ReadWriteDma<RXB, TXB, u8>
+            for SpiRxTxDma<$SPIi, XFER_MODE, RXCH, TXCH>
         where
             RXB: WriteBuffer<Word = u8>,
             TXB: ReadBuffer<Word = u8>,

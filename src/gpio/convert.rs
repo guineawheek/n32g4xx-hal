@@ -397,7 +397,7 @@ impl PinMode for Alternate<PushPull> {
 }
 
 impl PinMode for Alternate<Input> {
-    const CNF: u32 = 0b10;
+    const CNF: u32 = 0b01;
     const MODE: u32 = 0b00;
 }
 

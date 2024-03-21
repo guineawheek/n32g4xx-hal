@@ -518,7 +518,7 @@ macro_rules! hal {
                 fn enable_channel(c: u8, b: bool) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::CH_NUMBER {
-                        unsafe { bb::write(&tim.ccen(), c*4, b); }
+                        unsafe { bb::write(tim.ccen().as_ptr(), c*4, b); }
                     }
                 }
 
@@ -526,7 +526,7 @@ macro_rules! hal {
                 fn set_channel_polarity(c: u8, p: Polarity) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::CH_NUMBER {
-                        unsafe { bb::write(&tim.ccen(), c*4 + 1, p == Polarity::ActiveLow); }
+                        unsafe { bb::write(tim.ccen().as_ptr(), c*4 + 1, p == Polarity::ActiveLow); }
                     }
                 }
 
@@ -534,7 +534,7 @@ macro_rules! hal {
                 fn set_nchannel_polarity(c: u8, p: Polarity) {
                     let tim = unsafe { &*<$TIM>::ptr() };
                     if c < Self::COMP_CH_NUMBER {
-                        unsafe { bb::write(&tim.ccen(), c*4 + 3, p == Polarity::ActiveLow); }
+                        unsafe { bb::write(tim.ccen().as_ptr(), c*4 + 3, p == Polarity::ActiveLow); }
                     }
                 }
             }
@@ -545,7 +545,7 @@ macro_rules! hal {
                         let $aoe = ();
                         let tim = unsafe { &*<$TIM>::ptr() };
                         if c < Self::COMP_CH_NUMBER {
-                            unsafe { bb::write(&tim.ccen(), c*4 + 2, b); }
+                            unsafe { bb::write(tim.ccen().as_ptr(), c*4 + 2, b); }
                         }
                     }
                     fn set_dtg_value(value: u8) {
@@ -560,11 +560,11 @@ macro_rules! hal {
                         let tim = unsafe { &*<$TIM>::ptr() };
                         if !comp {
                             if c < Self::CH_NUMBER {
-                                unsafe { bb::write(&tim.ctrl2(), c*2 + 8, s == IdleState::Set); }
+                                unsafe { bb::write(tim.ctrl2().as_ptr(), c*2 + 8, s == IdleState::Set); }
                             }
                         } else {
                             if c < Self::COMP_CH_NUMBER {
-                                unsafe { bb::write(&tim.ctrl2(), c*2 + 9, s == IdleState::Set); }
+                                unsafe { bb::write(tim.ctrl2().as_ptr(), c*2 + 9, s == IdleState::Set); }
                             }
                         }
                     }

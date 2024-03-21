@@ -42,7 +42,7 @@ pub unsafe fn set<T>(register: *const T, bit: u8) {
 pub unsafe fn write<T>(register: *const T, bit: u8, set: bool) {
     let addr = register as usize;
 
-    assert!((PERI_ADDRESS_START..=PERI_ADDRESS_END).contains(&addr));
+    assert!((PERI_ADDRESS_START..=PERI_ADDRESS_END).contains(&addr),"addr: {:#x}",&addr);
     assert!(bit < 32);
 
     let bit = bit as usize;

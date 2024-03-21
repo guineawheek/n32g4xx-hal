@@ -11,6 +11,8 @@
 #![feature(min_specialization)]
 #![feature(macro_metavar_expr)]
 #![feature(more_qualified_paths)]
+#![feature(adt_const_params)]
+
 use enumflags2::{BitFlag, BitFlags};
 
 pub use embedded_hal as hal;

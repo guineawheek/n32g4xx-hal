@@ -24,7 +24,7 @@ pub use uart_impls::Instance;
 use uart_impls::RegisterBlockImpl;
 
 use crate::gpio::alt::altmap::Remap;
-use crate::gpio::{self, Input, PushPull};
+use crate::gpio::{self, Floating, Input, PushPull};
 
 use crate::pac;
 
@@ -183,7 +183,7 @@ pub struct Serial<USART: CommonPins, WORD = u8> {
 /// Serial receiver containing RX pin
 pub struct Rx<USART: CommonPins, WORD = u8> {
     _word: PhantomData<(USART, WORD)>,
-    pin: USART::Rx<Input>,
+    pin: USART::Rx<Floating>,
 }
 
 /// Serial transmitter containing TX pin
@@ -194,7 +194,7 @@ pub struct Tx<USART: CommonPins, WORD = u8> {
 }
 
 pub trait SerialExt: Sized + Instance {
-    fn serial<WORD,RMP : Remap,TX: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Tx<PushPull>>,RX : crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Rx<Input>>>(
+    fn serial<WORD,RMP : Remap,TX: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Tx<PushPull>>,RX : crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Rx<Floating>>>(
         self,
         pins: (TX,RX),
         config: impl Into<config::Config>,
@@ -209,9 +209,9 @@ pub trait SerialExt: Sized + Instance {
         clocks: &Clocks,
         afio: &mut crate::pac::AFIO,
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
-    where NoPin<Input>: Into<Self::Rx<Input>>;
+    where NoPin<Input>: Into<Self::Rx<Floating>>;
 
-    fn rx<WORD,RMP : Remap,RX: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Rx<Input>>>(
+    fn rx<WORD,RMP : Remap,RX: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Rx<Floating>>>(
         self,
         rx_pin: RX,
         config: impl Into<config::Config>,
@@ -224,7 +224,7 @@ pub trait SerialExt: Sized + Instance {
 impl<USART: Instance, WORD> Serial<USART, WORD> {
     pub fn new(
         usart: USART,
-        pins: (impl Into<USART::Tx<PushPull>>, impl Into<USART::Rx<Input>>),
+        pins: (impl Into<USART::Tx<PushPull>>, impl Into<USART::Rx<Floating>>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
         _afio: &mut crate::pac::AFIO
@@ -243,7 +243,7 @@ impl<UART: CommonPins, WORD> Serial<UART, WORD> {
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn release(self) -> (UART, (UART::Tx<PushPull>, UART::Rx<Input>)) {
+    pub fn release(self) -> (UART, (UART::Tx<PushPull>, UART::Rx<Floating>)) {
         (self.tx.usart, (self.tx.pin, self.rx.pin))
     }
 }
@@ -265,7 +265,7 @@ macro_rules! halUsart {
                 use crate::pac::$USARTMOD::ctrl2::STPB_A;
                 use config::StopBits;
 
-                self.ctrl2().write(|w| {
+                self.ctrl2().modify(|_,w| {
                     w.stpb().variant(match bits {
                         StopBits::STOP0P5 => STPB_A::STOP0P5,
                         StopBits::STOP1 => STPB_A::STOP1,
@@ -295,7 +295,7 @@ macro_rules! halUart {
                 use crate::pac::$USARTMOD::ctrl2::STPB_A;
                 use config::StopBits;
 
-                self.ctrl2().write(|w| {
+                self.ctrl2().modify(|_,w| {
                     w.stpb().variant(match bits {
                         StopBits::STOP0P5 => STPB_A::STOP0P5,
                         StopBits::STOP1 => STPB_A::STOP1,
@@ -343,7 +343,7 @@ impl<UART: CommonPins> Tx<UART, u16> {
 }
 
 impl<UART: CommonPins, WORD> Rx<UART, WORD> {
-    pub(crate) fn new(pin: UART::Rx<Input>) -> Self {
+    pub(crate) fn new(pin: UART::Rx<Floating>) -> Self {
         Self {
             _word: PhantomData,
             pin,
@@ -605,22 +605,34 @@ macro_rules! serialdma {
         )+
     }
 }
-use crate::pac::{USART1,USART2,USART3,UART4};
+use crate::pac::{USART1,USART2,USART3,UART4,UART5,UART6,UART7};
 serialdma! {
-        USART1: (
-            RxDma1,
-            TxDma1,
-        ),
-        USART2: (
-            RxDma2,
-            TxDma2,
-        ),
-        USART3: (
-            RxDma3,
-            TxDma3,
-        ),
-        UART4: (
-            RxDma4,
-            TxDma4,
-        ),
-    }
+    USART1: (
+        RxDma1,
+        TxDma1,
+    ),
+    USART2: (
+        RxDma2,
+        TxDma2,
+    ),
+    USART3: (
+        RxDma3,
+        TxDma3,
+    ),
+    UART4: (
+        RxDma4,
+        TxDma4,
+    ),
+    UART5: (
+        RxDma5,
+        TxDma5,
+    ),
+    UART6: (
+        RxDma6,
+        TxDma6,
+    ),
+    UART7: (
+        RxDma7,
+        TxDma7,
+    ),
+}

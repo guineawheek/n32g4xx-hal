@@ -28,10 +28,13 @@ impl From<Mode> for super::Mode {
 }
 
 mod nb {
+
+    use crate::spi::TransferMode;
+
     use super::super::{Error, FrameSize, Instance, Spi};
     use embedded_hal_02::spi::FullDuplex;
 
-    impl<SPI, const BIDI: bool, W: FrameSize> FullDuplex<W> for Spi<SPI, BIDI, W>
+    impl<SPI, const XFER_MODE: TransferMode, W: FrameSize> FullDuplex<W> for Spi<SPI, XFER_MODE, W>
     where
         SPI: Instance,
     {
@@ -48,10 +51,11 @@ mod nb {
 }
 
 mod blocking {
+    use crate::spi::TransferMode;
     use super::super::{Error, Instance, Spi};
     use embedded_hal_02::blocking::spi::{Operation, Transactional, Transfer, Write, WriteIter};
 
-    impl<SPI> Transfer<u8> for Spi<SPI, false, u8>
+    impl<SPI> Transfer<u8> for Spi<SPI, {TransferMode::TransferModeNormal}, u8>
     where
         SPI: Instance,
     {
@@ -64,7 +68,7 @@ mod blocking {
         }
     }
 
-    impl<SPI> Transfer<u16> for Spi<SPI, false, u16>
+    impl<SPI> Transfer<u16> for Spi<SPI, {TransferMode::TransferModeNormal}, u16>
     where
         SPI: Instance,
     {
@@ -76,7 +80,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, const BIDI: bool> Write<u8> for Spi<SPI, BIDI, u8>
+    impl<SPI, const XFER_MODE: TransferMode> Write<u8> for Spi<SPI, XFER_MODE, u8>
     where
         SPI: Instance,
     {
@@ -87,7 +91,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, const BIDI: bool> WriteIter<u8> for Spi<SPI, BIDI, u8>
+    impl<SPI, const XFER_MODE: TransferMode> WriteIter<u8> for Spi<SPI, XFER_MODE, u8>
     where
         SPI: Instance,
     {
@@ -101,7 +105,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, const BIDI: bool> Write<u16> for Spi<SPI, BIDI, u16>
+    impl<SPI, const XFER_MODE: TransferMode> Write<u16> for Spi<SPI, XFER_MODE, u16>
     where
         SPI: Instance,
     {
@@ -112,7 +116,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, const BIDI: bool> WriteIter<u16> for Spi<SPI, BIDI, u16>
+    impl<SPI, const XFER_MODE: TransferMode> WriteIter<u16> for Spi<SPI, XFER_MODE, u16>
     where
         SPI: Instance,
     {
@@ -126,7 +130,7 @@ mod blocking {
         }
     }
 
-    impl<SPI, const BIDI: bool, W: Copy + 'static> Transactional<W> for Spi<SPI, BIDI, W>
+    impl<SPI, const XFER_MODE: TransferMode, W: Copy + 'static> Transactional<W> for Spi<SPI, XFER_MODE, W>
     where
         Self: Transfer<W, Error = Error> + Write<W, Error = Error>,
         SPI: Instance,

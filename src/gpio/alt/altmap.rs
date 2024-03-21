@@ -21,38 +21,38 @@ impl<PER,Mapper> !RemapIO<PER,Mapper> for NoPin {
 pub mod spi1 {
     use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, Floating, NoPin, PushPull};
+    use crate::gpio::{self, Floating, Input, NoPin, PushPull};
     use crate::{gpio::alt::altmap::pin, pac::SPI1 as SPI};
 
-    pub(crate) struct SPI1NoRemapRemapper();
-    pub(crate) struct SPI1PartialRemapOneRemapper();
-    pub(crate) struct SPI1PartialRemapTwoRemapper();
-    pub(crate) struct SPI1FullRemapRemapper();
+    pub struct SPI1NoRemapRemapper();
+    pub struct SPI1PartialRemapOneRemapper();
+    pub struct SPI1PartialRemapTwoRemapper();
+    pub struct SPI1FullRemapRemapper();
 
     impl Remap for SPI1NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| w.spi1_rmp_0().clear_bit());
-            afio.rmp_cfg3().write(|w| w.spi1_rmp_1().clear_bit());
+            afio.rmp_cfg().modify(|_,w| w.spi1_rmp_0().clear_bit());
+            afio.rmp_cfg3().modify(|_,w| w.spi1_rmp_1().clear_bit());
         }
     }
     impl Remap for SPI1PartialRemapOneRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| w.spi1_rmp_0().set_bit());
-            afio.rmp_cfg3().write(|w| w.spi1_rmp_1().clear_bit());
+            afio.rmp_cfg().modify(|_,w| w.spi1_rmp_0().set_bit());
+            afio.rmp_cfg3().modify(|_,w| w.spi1_rmp_1().clear_bit());
         }
     }
 
     impl Remap for SPI1PartialRemapTwoRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| w.spi1_rmp_0().clear_bit());
-            afio.rmp_cfg3().write(|w| w.spi1_rmp_1().set_bit());
+            afio.rmp_cfg().modify(|_,w| w.spi1_rmp_0().clear_bit());
+            afio.rmp_cfg3().modify(|_,w| w.spi1_rmp_1().set_bit());
         }
     }
 
     impl Remap for SPI1FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| w.spi1_rmp_0().set_bit());
-            afio.rmp_cfg3().write(|w| w.spi1_rmp_1().set_bit());
+            afio.rmp_cfg().modify(|_,w| w.spi1_rmp_0().set_bit());
+            afio.rmp_cfg3().modify(|_,w| w.spi1_rmp_1().set_bit());
         }
     }
 
@@ -104,7 +104,7 @@ pub mod spi1 {
             PB3,
             PE7,
         ],
-        <Miso> default: Floating for no:NoPin, [
+        <Miso> default: Input for no:NoPin, [
             PA6,
             PB4,
             PE8,
@@ -132,25 +132,25 @@ pub mod spi2 {
     use crate::gpio::{self, Floating, NoPin, PushPull};
     use crate::{gpio::alt::altmap::pin, pac::SPI2 as SPI};
 
-    pub(crate) struct SPI2NoRemapRemapper();
-    pub(crate) struct SPI2PartialRemapRemapper();
-    pub(crate) struct SPI2FullRemapRemapper();
+    pub struct SPI2NoRemapRemapper();
+    pub struct SPI2PartialRemapRemapper();
+    pub struct SPI2FullRemapRemapper();
 
     impl Remap for SPI2NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.spi2_rmp().bits(0b00)});
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.spi2_rmp().bits(0b00)});
         }
     }
 
     impl Remap for SPI2PartialRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.spi2_rmp().bits(0b01)});
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.spi2_rmp().bits(0b01)});
         }
     }
 
     impl Remap for SPI2FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.spi2_rmp().bits(0b11)});
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.spi2_rmp().bits(0b11)});
         }
     }
 
@@ -218,35 +218,35 @@ pub mod spi2 {
 pub mod spi3 {
     use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, Floating, NoPin, PushPull};
+    use crate::gpio::{self, Floating, Input, NoPin, PushPull};
     use crate::{gpio::alt::altmap::pin, pac::SPI3 as SPI};
 
-    pub(crate) struct SPI3NoRemapRemapper();
-    pub(crate) struct SPI3PartialRemapOneRemapper();
-    pub(crate) struct SPI3PartialRemapTwoRemapper();
-    pub(crate) struct SPI3FullRemapRemapper();
+    pub struct SPI3NoRemapRemapper();
+    pub struct SPI3PartialRemapOneRemapper();
+    pub struct SPI3PartialRemapTwoRemapper();
+    pub struct SPI3FullRemapRemapper();
 
     impl Remap for SPI3NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.spi3_rmp().bits(0b00)});
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.spi3_rmp().bits(0b00)});
         }
     }
 
     impl Remap for SPI3PartialRemapOneRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.spi3_rmp().bits(0b01)});
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.spi3_rmp().bits(0b01)});
         }
     }
 
     impl Remap for SPI3PartialRemapTwoRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.spi3_rmp().bits(0b10)});
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.spi3_rmp().bits(0b10)});
         }
     }
 
     impl Remap for SPI3FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.spi3_rmp().bits(0b11)});
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.spi3_rmp().bits(0b11)});
         }
     }
 
@@ -300,7 +300,7 @@ pub mod spi3 {
             PD9,
             PC3,
         ],
-        <Miso> default: Floating for no:NoPin, [
+        <Miso> default: Input for no:NoPin, [
             PB4,
             PC10,
             PD9,
@@ -330,18 +330,18 @@ pub mod usart1 {
     use super::*;
     use crate::gpio::{self, NoPin, PushPull,Input};
 
-    pub(crate) struct USART1NoRemapRemapper();
-    pub(crate) struct USART1FullRemapRemapper();
+    pub struct USART1NoRemapRemapper();
+    pub struct USART1FullRemapRemapper();
 
     impl Remap for USART1NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| w.usart1_rmp().clear_bit())
+            afio.rmp_cfg().modify(|_,w| w.usart1_rmp().clear_bit())
         }
     }
 
     impl Remap for USART1FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| w.usart1_rmp().clear_bit())
+            afio.rmp_cfg().modify(|_,w| w.usart1_rmp().set_bit())
         }
     }
 
@@ -356,19 +356,19 @@ pub mod usart1 {
     impl RemapIO<USART,USART1FullRemapRemapper> for crate::gpio::PB7 {
     }
 
-    // pin! {
-    //     <Ck, PushPull> for [
-    //         PA8,
-    //     ],
+    pin! {
+        <Ck, PushPull> for [
+            PA8,
+        ],
 
-    //     <Cts, PushPull> for [
-    //         PA11,
-    //     ],
+        <Cts, PushPull> for [
+            PA11,
+        ],
 
-    //     <Rts, PushPull> for [
-    //         PA12,
-    //     ],
-    // }
+        <Rts, PushPull> for [
+            PA12,
+        ],
+    }
 
     pin! {
         <Rx> default: Floating for no:NoPin, [
@@ -388,19 +388,19 @@ pub mod usart1 {
         type Tx<Otype> = Tx<Otype>;
     }
 
-    // impl SerialSync for USART {
-    //     type Rx<Itype> = Rx<Input<Itype>>;
-    //     type Tx<Otype> = Tx<Otype>;
-    //     type Ck = Ck;
+    impl SerialSync for USART {
+        type Rx<Itype> = Rx<Input<Itype>>;
+        type Tx<Otype> = Tx<Otype>;
+        type Ck = Ck;
 
-    // }
+    }
 
-    // impl SerialRs232 for USART {
-    //     type Rx<Itype> = Rx<Input<Itype>>;
-    //     type Tx<Otype> = Tx<Otype>;
-    //     type Cts = Cts;
-    //     type Rts = Rts;
-    // }
+    impl SerialRs232 for USART {
+        type Rx<Itype> = Rx<Input<Itype>>;
+        type Tx<Otype> = Tx<Otype>;
+        type Cts = Cts;
+        type Rts = Rts;
+    }
 }
 
 pub mod usart2 {
@@ -409,29 +409,33 @@ pub mod usart2 {
     use crate::gpio::{self, NoPin, PushPull,Input};
     use crate::{gpio::alt::altmap::pin, pac::USART2 as USART};
 
-    pub(crate) struct USART2NoRemapRemapper();
-    pub(crate) struct USART2PartialRemapOneRemapper();
-    pub(crate) struct USART2PartialRemapTwoRemapper();
-    pub(crate) struct USART2FullRemapRemapper();
+    pub struct USART2NoRemapRemapper();
+    pub struct USART2PartialRemapOneRemapper();
+    pub struct USART2PartialRemapTwoRemapper();
+    pub struct USART2FullRemapRemapper();
 
     impl Remap for USART2NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| w.usart1_rmp().clear_bit())
+            afio.rmp_cfg().modify(|_,w| w.usart2_rmp_0().clear_bit());
+            afio.rmp_cfg3().modify(|_,w| w.usart2_rmp_1().clear_bit());
         }
     }
     impl Remap for USART2PartialRemapOneRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| w.usart1_rmp().clear_bit())
+            afio.rmp_cfg().modify(|_,w| w.usart2_rmp_0().set_bit());
+            afio.rmp_cfg3().modify(|_,w| w.usart2_rmp_1().clear_bit());
         }
     }
     impl Remap for USART2PartialRemapTwoRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| w.usart1_rmp().clear_bit())
+            afio.rmp_cfg().modify(|_,w| w.usart2_rmp_0().clear_bit());
+            afio.rmp_cfg3().modify(|_,w| w.usart2_rmp_1().set_bit());
         }
     }
     impl Remap for USART2FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| w.usart1_rmp().clear_bit())
+            afio.rmp_cfg().modify(|_,w| w.usart2_rmp_0().set_bit());
+            afio.rmp_cfg3().modify(|_,w| w.usart2_rmp_1().set_bit());
         }
     }
 
@@ -477,26 +481,26 @@ pub mod usart2 {
     impl<T> RemapIO<USART,USART2FullRemapRemapper> for crate::gpio::PA4<T> {
     }
 
-    // pin! {
-    //     <Ck, PushPull> for [
-    //         PA4,
-    //         PD7,
-    //     ],
+    pin! {
+        <Ck, PushPull> for [
+            PA4,
+            PD7,
+        ],
 
-    //     <Cts, PushPull> for [
-    //         PA0,
-    //         PD3,
-    //         PC6,
-    //         PA15,
-    //     ],
+        <Cts, PushPull> for [
+            PA0,
+            PD3,
+            PC6,
+            PA15,
+        ],
 
-    //     <Rts, PushPull> for [
-    //         PA1,
-    //         PD4,
-    //         PC7,
-    //         PB3,
-    //     ],
-    // }
+        <Rts, PushPull> for [
+            PA1,
+            PD4,
+            PC7,
+            PB3,
+        ],
+    }
 
     pin! {
         <Rx> default: Floating for no:NoPin, [
@@ -519,19 +523,19 @@ pub mod usart2 {
         type Tx<Otype> = Tx<Otype>;
     }
 
-    // impl SerialSync for USART {
-    //     type Rx<Itype> = Rx<Input<Itype>>;
-    //     type Tx<Otype> = Tx<Otype>;
-    //     type Ck = Ck;
+    impl SerialSync for USART {
+        type Rx<Itype> = Rx<Input<Itype>>;
+        type Tx<Otype> = Tx<Otype>;
+        type Ck = Ck;
 
-    // }
+    }
 
-    // impl SerialRs232 for USART {
-    //     type Rx<Itype> = Rx<Input<Itype>>;
-    //     type Tx<Otype> = Tx<Otype>;
-    //     type Cts = Cts;
-    //     type Rts = Rts;
-    // }
+    impl SerialRs232 for USART {
+        type Rx<Itype> = Rx<Input<Itype>>;
+        type Tx<Otype> = Tx<Otype>;
+        type Cts = Cts;
+        type Rts = Rts;
+    }
 }
 
 
@@ -541,26 +545,25 @@ pub mod usart3 {
     use crate::gpio::{self, NoPin, PushPull,Input};
     use crate::{gpio::alt::altmap::pin, pac::USART3 as USART};
 
-    pub(crate) struct USART3NoRemapRemapper();
-
-    pub(crate) struct USART3PartialRemapRemapper();
-    pub(crate) struct USART3FullRemapRemapper();
+    pub struct USART3NoRemapRemapper();
+    pub struct USART3PartialRemapRemapper();
+    pub struct USART3FullRemapRemapper();
 
     impl Remap for USART3NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| unsafe { w.usart3_rmp().bits(0)})
+            afio.rmp_cfg().modify(|_,w| unsafe { w.usart3_rmp().bits(0)})
         }
     }
 
     impl Remap for USART3PartialRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| unsafe { w.usart3_rmp().bits(1)})
+            afio.rmp_cfg().modify(|_,w| unsafe { w.usart3_rmp().bits(1)})
         }
     }
 
     impl Remap for USART3FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| unsafe { w.usart3_rmp().bits(3)})
+            afio.rmp_cfg().modify(|_,w| unsafe { w.usart3_rmp().bits(3)})
         }
     }
 
@@ -594,23 +597,24 @@ pub mod usart3 {
     }
     impl<T> RemapIO<USART,USART3PartialRemapRemapper> for crate::gpio::PD12<T> {
     }
-    // pin! {
-    //     <Ck, PushPull> for [
-    //         PB12,
-    //         PC12,
-    //         PD10,
-    //     ],
+    
+    pin! {
+        <Ck, PushPull> for [
+            PB12,
+            PC12,
+            PD10,
+        ],
 
-    //     <Cts, PushPull> for [
-    //         PB13,
-    //         PD11,
-    //     ],
+        <Cts, PushPull> for [
+            PB13,
+            PD11,
+        ],
 
-    //     <Rts, PushPull> for [
-    //         PB14,
-    //         PD12,
-    //     ],
-    // }
+        <Rts, PushPull> for [
+            PB14,
+            PD12,
+        ],
+    }
 
     pin! {
         <Rx> default: Floating for no:NoPin, [
@@ -631,19 +635,19 @@ pub mod usart3 {
         type Tx<Otype> = Tx<Otype>;
     }
 
-    // impl SerialSync for USART {
-    //     type Rx<Itype> = Rx<Input<Itype>>;
-    //     type Tx<Otype> = Tx<Otype>;
-    //     type Ck = Ck;
+    impl SerialSync for USART {
+        type Rx<Itype> = Rx<Input<Itype>>;
+        type Tx<Otype> = Tx<Otype>;
+        type Ck = Ck;
 
-    // }
+    }
 
-    // impl SerialRs232 for USART {
-    //     type Rx<Itype> = Rx<Input<Itype>>;
-    //     type Tx<Otype> = Tx<Otype>;
-    //     type Cts = Cts;
-    //     type Rts = Rts;
-    // }
+    impl SerialRs232 for USART {
+        type Rx<Itype> = Rx<Input<Itype>>;
+        type Tx<Otype> = Tx<Otype>;
+        type Cts = Cts;
+        type Rts = Rts;
+    }
 }
 
 
@@ -660,25 +664,25 @@ pub mod uart4 {
 
     impl Remap for UART4NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart4_rmp().bits(0)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart4_rmp().bits(0)})
         }
     }
 
     impl Remap for UART4PartialRemapOneRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart4_rmp().bits(1)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart4_rmp().bits(1)})
         }
     }
 
     impl Remap for UART4PartialRemapTwoRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart4_rmp().bits(2)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart4_rmp().bits(2)})
         }
     }
 
     impl Remap for UART4FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart4_rmp().bits(3)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart4_rmp().bits(3)})
         }
     }
 
@@ -728,32 +732,32 @@ pub mod uart5 {
     use crate::gpio::{self, NoPin, PushPull,Input};
     use crate::{gpio::alt::altmap::pin, pac::UART5 as UART};
 
-    pub(crate) struct UART5NoRemapRemapper();
-    pub(crate) struct UART5PartialRemapOneRemapper();
-    pub(crate) struct UART5PartialRemapTwoRemapper();
-    pub(crate) struct UART5FullRemapRemapper();
+    pub struct UART5NoRemapRemapper();
+    pub struct UART5PartialRemapOneRemapper();
+    pub struct UART5PartialRemapTwoRemapper();
+    pub struct UART5FullRemapRemapper();
 
     impl Remap for UART5NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart5_rmp().bits(0)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart5_rmp().bits(0)})
         }
     }
 
     impl Remap for UART5PartialRemapOneRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart5_rmp().bits(1)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart5_rmp().bits(1)})
         }
     }
 
     impl Remap for UART5PartialRemapTwoRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart5_rmp().bits(2)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart5_rmp().bits(2)})
         }
     }
 
     impl Remap for UART5FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart5_rmp().bits(3)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart5_rmp().bits(3)})
         }
     }
 
@@ -808,19 +812,19 @@ pub mod uart6 {
 
     impl Remap for UART6NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart6_rmp().bits(0)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart6_rmp().bits(0)})
         }
     }
 
     impl Remap for UART6PartialRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart6_rmp().bits(1)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart6_rmp().bits(1)})
         }
     }
 
     impl Remap for UART6FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart6_rmp().bits(3)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart6_rmp().bits(3)})
         }
     }
 
@@ -869,19 +873,19 @@ pub mod uart7 {
 
     impl Remap for UART7NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart7_rmp().bits(0)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart7_rmp().bits(0)})
         }
     }
 
     impl Remap for UART7PartialRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart7_rmp().bits(1)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart7_rmp().bits(1)})
         }
     }
 
     impl Remap for UART7FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg3().write(|w| unsafe { w.uart7_rmp().bits(3)})
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.uart7_rmp().bits(3)})
         }
     }
 
@@ -925,35 +929,35 @@ pub mod tim2 {
     use crate::gpio::{self, NoPin, PushPull};
     use crate::{gpio::alt::altmap::pin, pac::TIM2 as TIM};
 
-    pub(crate) struct TIM2NoRemapRemapper();
-    pub(crate) struct TIM2PartialRemapOneRemapper();
+    pub struct TIM2NoRemapRemapper();
+    pub struct TIM2PartialRemapOneRemapper();
 
-    pub(crate) struct TIM2PartialRemapTwoRemapper();
+    pub struct TIM2PartialRemapTwoRemapper();
 
-    pub(crate) struct TIM2FullRemapRemapper();
+    pub struct TIM2FullRemapRemapper();
 
     impl Remap for TIM2NoRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| unsafe { w.tim2_rmp().bits(0)})
+            afio.rmp_cfg().modify(|_,w| unsafe { w.tim2_rmp().bits(0)})
         }
     }
 
     impl Remap for TIM2PartialRemapOneRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| unsafe { w.tim2_rmp().bits(1)})
+            afio.rmp_cfg().modify(|_,w| unsafe { w.tim2_rmp().bits(1)})
         }
     }
 
     impl Remap for TIM2PartialRemapTwoRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| unsafe { w.tim2_rmp().bits(2)})
+            afio.rmp_cfg().modify(|_,w| unsafe { w.tim2_rmp().bits(2)})
         }
     }
 
 
     impl Remap for TIM2FullRemapRemapper {
         fn remap( afio : &mut crate::pac::AFIO) {
-            afio.rmp_cfg().write(|w| unsafe { w.tim2_rmp().bits(3)})
+            afio.rmp_cfg().modify(|_,w| unsafe { w.tim2_rmp().bits(3)})
         }
     }
 
@@ -1030,4 +1034,206 @@ pub mod tim2 {
     impl TimCPin<3> for TIM {
         type Ch<Otype> = Ch4<Otype>;
     }
+}
+
+
+pub mod tim1 {
+    use self::altmap::{Remap, RemapIO};
+    use super::*;
+    use crate::gpio::{self, NoPin, PushPull};
+    use crate::{gpio::alt::altmap::pin, pac::TIM1 as TIM};
+
+    pub struct TIM1NoRemapRemapper();
+
+    pub struct TIM1PartialRemapOneRemapper();
+
+    pub struct TIM1PartialRemapTwoRemapper();
+
+    pub struct TIM1FullRemapRemapper();
+
+    impl Remap for TIM1NoRemapRemapper {
+        fn remap( afio : &mut crate::pac::AFIO) {
+            afio.rmp_cfg().modify(|_,w| unsafe { w.tim1_rmp().bits(0)})
+        }
+    }
+
+    impl Remap for TIM1PartialRemapOneRemapper {
+        fn remap( afio : &mut crate::pac::AFIO) {
+            afio.rmp_cfg().modify(|_,w| unsafe { w.tim1_rmp().bits(1)})
+        }
+    }
+
+    impl Remap for TIM1PartialRemapTwoRemapper {
+        fn remap( afio : &mut crate::pac::AFIO) {
+            afio.rmp_cfg().modify(|_,w| unsafe { w.tim1_rmp().bits(2)})
+        }
+    }
+
+
+    impl Remap for TIM1FullRemapRemapper {
+        fn remap( afio : &mut crate::pac::AFIO) {
+            afio.rmp_cfg().modify(|_,w| unsafe { w.tim1_rmp().bits(3)})
+        }
+    }
+
+    impl RemapIO<TIM,TIM1NoRemapRemapper> for crate::gpio::PA12 {
+    }
+    impl RemapIO<TIM,TIM1NoRemapRemapper> for crate::gpio::PA8 {
+    }
+    impl RemapIO<TIM,TIM1NoRemapRemapper> for crate::gpio::PA9 {
+    }
+    impl RemapIO<TIM,TIM1NoRemapRemapper> for crate::gpio::PA10 {
+    }
+    impl RemapIO<TIM,TIM1NoRemapRemapper> for crate::gpio::PA11 {
+    }
+    impl RemapIO<TIM,TIM1NoRemapRemapper> for crate::gpio::PB12 {
+    }
+    impl RemapIO<TIM,TIM1NoRemapRemapper> for crate::gpio::PB13 {
+    }
+    impl RemapIO<TIM,TIM1NoRemapRemapper> for crate::gpio::PB14 {
+    }
+    impl RemapIO<TIM,TIM1NoRemapRemapper> for crate::gpio::PB15 {
+    }
+
+
+    impl RemapIO<TIM,TIM1PartialRemapOneRemapper> for crate::gpio::PA12 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapOneRemapper> for crate::gpio::PA8 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapOneRemapper> for crate::gpio::PA9 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapOneRemapper> for crate::gpio::PA10 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapOneRemapper> for crate::gpio::PA11 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapOneRemapper> for crate::gpio::PA6 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapOneRemapper> for crate::gpio::PA7 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapOneRemapper> for crate::gpio::PB0 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapOneRemapper> for crate::gpio::PB1 {
+    }
+
+    impl RemapIO<TIM,TIM1PartialRemapTwoRemapper> for crate::gpio::PA12 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapTwoRemapper> for crate::gpio::PA8 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapTwoRemapper> for crate::gpio::PA9 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapTwoRemapper> for crate::gpio::PA10 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapTwoRemapper> for crate::gpio::PA11 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapTwoRemapper> for crate::gpio::PB5 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapTwoRemapper> for crate::gpio::PB13 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapTwoRemapper> for crate::gpio::PB14 {
+    }
+    impl RemapIO<TIM,TIM1PartialRemapTwoRemapper> for crate::gpio::PB15 {
+    }
+
+    impl RemapIO<TIM,TIM1FullRemapRemapper> for crate::gpio::PE7 {
+    }
+    impl RemapIO<TIM,TIM1FullRemapRemapper> for crate::gpio::PE9 {
+    }
+    impl RemapIO<TIM,TIM1FullRemapRemapper> for crate::gpio::PE11 {
+    }
+    impl RemapIO<TIM,TIM1FullRemapRemapper> for crate::gpio::PE13 {
+    }
+    impl RemapIO<TIM,TIM1FullRemapRemapper> for crate::gpio::PE14 {
+    }
+    impl RemapIO<TIM,TIM1FullRemapRemapper> for crate::gpio::PE15 {
+    }
+    impl RemapIO<TIM,TIM1FullRemapRemapper> for crate::gpio::PE8 {
+    }
+    impl RemapIO<TIM,TIM1FullRemapRemapper> for crate::gpio::PE10 {
+    }
+    impl RemapIO<TIM,TIM1FullRemapRemapper> for crate::gpio::PE12 {
+    }
+
+
+    pin! {
+        <Ch1> default: PushPull for no:NoPin, [
+            PA8,
+            PE7,
+        ],
+
+        <Ch2> default: PushPull for no:NoPin, [
+            PA9,
+            PE9,
+        ],
+
+        <Ch3> default: PushPull for no:NoPin, [
+            PA10,
+            PE13,
+        ],
+
+        <Ch4> default: PushPull for no:NoPin, [
+            PA11,
+            PE14,
+        ],
+        <Ch1n> default: PushPull for no:NoPin, [
+            PB13,
+            PA7,
+            PE8,
+        ],
+
+        <Ch2n> default: PushPull for no:NoPin, [
+            PB14,
+            PB0,
+            PE10,
+        ],
+
+        <Ch3n> default: PushPull for no:NoPin, [
+            PB15,
+            PB1,
+            PE12,
+        ],
+
+        <Etr> default: PushPull for no:NoPin, [
+            PA12,
+            PE7,
+        ],
+        <Bkin> default: Floating for no:NoPin, [
+            PB12,
+            PA6,
+            PB5,
+            PE15,
+        ],
+    }
+
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+
+    impl TimCPin<1> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
+    }
+    
+    impl TimCPin<2> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
+    }
+
+    impl TimCPin<3> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
+    }
+
+    impl TimNCPin<0> for TIM {
+        type ChN<Otype> = Ch1n<Otype>;
+    }
+
+    impl TimNCPin<1> for TIM {
+        type ChN<Otype> = Ch2n<Otype>;
+    }
+    
+    impl TimNCPin<2> for TIM {
+        type ChN<Otype> = Ch3n<Otype>;
+    }
+
+    impl TimBkin for TIM {
+        type Bkin = Bkin;
+    }
+
 }

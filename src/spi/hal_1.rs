@@ -38,16 +38,19 @@ impl Error for super::Error {
         }
     }
 }
+use crate::spi::TransferMode;
 
-impl<SPI: Instance, const BIDI: bool, W> ErrorType for super::Spi<SPI, BIDI, W> {
+impl<SPI: Instance, const XFER_MODE: TransferMode, W> ErrorType for super::Spi<SPI, XFER_MODE, W> {
     type Error = super::Error;
 }
 
 mod nb {
+    use crate::spi::TransferMode;
+
     use super::super::{Error, FrameSize, Instance, Spi};
     use embedded_hal_nb::spi::FullDuplex;
 
-    impl<SPI, const BIDI: bool, W: FrameSize> FullDuplex<W> for Spi<SPI, BIDI, W>
+    impl<SPI, const XFER_MODE: TransferMode, W: FrameSize> FullDuplex<W> for Spi<SPI, XFER_MODE, W>
     where
         SPI: Instance,
     {
@@ -62,10 +65,12 @@ mod nb {
 }
 
 mod blocking {
+    use crate::spi::TransferMode;
+
     use super::super::{FrameSize, Instance, Spi};
     use embedded_hal::spi::SpiBus;
 
-    impl<SPI, const BIDI: bool, W: FrameSize + 'static> SpiBus<W> for Spi<SPI, BIDI, W>
+    impl<SPI, const XFER_MODE: TransferMode, W: FrameSize + 'static> SpiBus<W> for Spi<SPI, XFER_MODE, W>
     where
         SPI: Instance,
     {

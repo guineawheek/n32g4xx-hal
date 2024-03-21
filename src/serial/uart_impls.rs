@@ -6,6 +6,7 @@ use nb::block;
 use super::{
     config, CFlag, Error, Event, Flag, Rx, RxISR, RxListen, Serial, SerialExt, Tx, TxISR, TxListen,
 };
+use crate::gpio::Floating;
 use crate::gpio::{alt::altmap::Remap, Input};
 use crate::gpio::{alt::SerialAsync as CommonPins, NoPin, PushPull};
 use crate::rcc::{self, Clocks};
@@ -30,7 +31,7 @@ pub trait RegisterBlockImpl: crate::Sealed {
     #[allow(clippy::new_ret_no_self)]
     fn new<UART: Instance<RegisterBlock = Self>, WORD>(
         uart: UART,
-        pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<Input>>),
+        pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<Floating>>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
     ) -> Result<Serial<UART, WORD>, config::InvalidConfig>;
@@ -120,7 +121,7 @@ macro_rules! uartCommon {
         impl RegisterBlockImpl for $RegisterBlock {
             fn new<UART: Instance<RegisterBlock = Self>, WORD>(
                 uart: UART,
-                pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<Input>>),
+                pins: (impl Into<UART::Tx<PushPull>>, impl Into<UART::Rx<Floating>>),
                 config: impl Into<config::Config>,
                 clocks: &Clocks,
             ) -> Result<Serial<UART, WORD>, config::InvalidConfig>
@@ -172,7 +173,8 @@ macro_rules! uartCommon {
                     w.wl().bit(config.wordlength == WordLength::DataBits9);
                     w.pcen().bit(config.parity != Parity::ParityNone);
                     w.psel().bit(config.parity == Parity::ParityOdd);
-                    w.txen().set_bit()
+                    w.txen().set_bit();
+                    w.rxen().set_bit()
                 });
                 register_block.brcf().write(|w| unsafe { w.bits(div) });
                 register_block.ctrl1().modify(|_,w| {
@@ -435,7 +437,7 @@ where
 }
 
 impl<UART: Instance> SerialExt for UART {
-    fn serial<WORD,RMP : Remap,TX: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Tx<PushPull>>,RX : crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Rx<Input>>>(
+    fn serial<WORD,RMP : Remap,TX: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Tx<PushPull>>,RX : crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Rx<Floating>>>(
         self,
         pins: (TX,RX),
         config: impl Into<config::Config>,
@@ -453,12 +455,12 @@ impl<UART: Instance> SerialExt for UART {
         afio: &mut crate::pac::AFIO
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
     where
-        NoPin<Input>: Into<Self::Rx<Input>>,
+        NoPin<Input>: Into<Self::Rx<Floating>>,
     {
         RMP::remap(afio);
         Serial::tx(self, tx_pin, config, clocks,afio)
     }
-    fn rx<WORD,RMP : Remap,RX: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Rx<Input>>>(
+    fn rx<WORD,RMP : Remap,RX: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Rx<Floating>>>(
         self,
         rx_pin: RX,
         config: impl Into<config::Config>,
@@ -482,7 +484,7 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         afio: &mut crate::pac::AFIO
     ) -> Result<Tx<UART, WORD>, config::InvalidConfig>
     where
-        NoPin<Input>: Into<UART::Rx<Input>>,
+        NoPin<Input>: Into<UART::Rx<Floating>>,
     {
         Self::new(usart, (tx_pin.into(), NoPin::new().into()) , config, clocks,afio).map(|s| s.split().0)
     }
@@ -491,7 +493,7 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
 impl<UART: Instance, WORD> Serial<UART, WORD> {
     pub fn rx(
         usart: UART,
-        rx_pin: impl Into<UART::Rx<Input>>,
+        rx_pin: impl Into<UART::Rx<Floating>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
         afio: &mut crate::pac::AFIO
