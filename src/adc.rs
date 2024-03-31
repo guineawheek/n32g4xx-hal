@@ -131,7 +131,6 @@
 
 use crate::rcc::{Enable, Reset};
 use crate::{
-    gpio::{self, Analog},
     pac};
 use core::fmt;
 
@@ -150,7 +149,7 @@ pub mod config {
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
     #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
     #[repr(u8)]
-    pub enum Sequence {
+    pub enum RegularSequence {
         /// 1
         One = 0,
         /// 2
@@ -185,35 +184,69 @@ pub mod config {
         Sixteen = 15,
     }
 
-    impl From<Sequence> for u8 {
-        fn from(s: Sequence) -> u8 {
+    impl From<RegularSequence> for u8 {
+        fn from(s: RegularSequence) -> u8 {
             s as _
         }
     }
 
-    impl From<u8> for Sequence {
+    impl From<u8> for RegularSequence {
         fn from(bits: u8) -> Self {
             match bits {
-                0 => Sequence::One,
-                1 => Sequence::Two,
-                2 => Sequence::Three,
-                3 => Sequence::Four,
-                4 => Sequence::Five,
-                5 => Sequence::Six,
-                6 => Sequence::Seven,
-                7 => Sequence::Eight,
-                8 => Sequence::Nine,
-                9 => Sequence::Ten,
-                10 => Sequence::Eleven,
-                11 => Sequence::Twelve,
-                12 => Sequence::Thirteen,
-                13 => Sequence::Fourteen,
-                14 => Sequence::Fifteen,
-                15 => Sequence::Sixteen,
+                0 => RegularSequence::One,
+                1 => RegularSequence::Two,
+                2 => RegularSequence::Three,
+                3 => RegularSequence::Four,
+                4 => RegularSequence::Five,
+                5 => RegularSequence::Six,
+                6 => RegularSequence::Seven,
+                7 => RegularSequence::Eight,
+                8 => RegularSequence::Nine,
+                9 => RegularSequence::Ten,
+                10 => RegularSequence::Eleven,
+                11 => RegularSequence::Twelve,
+                12 => RegularSequence::Thirteen,
+                13 => RegularSequence::Fourteen,
+                14 => RegularSequence::Fifteen,
+                15 => RegularSequence::Sixteen,
                 _ => unimplemented!(),
             }
         }
     }
+
+    /// The place in the sequence a given channel should be captured
+    #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+    #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
+    #[repr(u8)]
+    pub enum InjectedSequence {
+        /// 1
+        One = 0,
+        /// 2
+        Two = 1,
+        /// 3
+        Three = 2,
+        /// 4
+        Four = 3,
+    }
+
+    impl From<InjectedSequence> for u8 {
+        fn from(s: InjectedSequence) -> u8 {
+            s as _
+        }
+    }
+
+    impl From<u8> for InjectedSequence {
+        fn from(bits: u8) -> Self {
+            match bits {
+                0 => InjectedSequence::One,
+                1 => InjectedSequence::Two,
+                2 => InjectedSequence::Three,
+                3 => InjectedSequence::Four,
+                _ => unimplemented!(),
+            }
+        }
+    }
+
 
     /// The number of cycles to sample a given channel for
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -552,7 +585,7 @@ impl<ADC> fmt::Debug for Adc<ADC> {
 }
 
 macro_rules! adc {
-    ($($adc_type:ident => ($constructor_fn_name:ident, $en_bit: expr)),+ $(,)*) => {
+    ($($adc_type:ident => ($constructor_fn_name:ident)),+ $(,)*) => {
         $(
 
             impl Adc<pac::$adc_type> {
@@ -594,7 +627,8 @@ macro_rules! adc {
                     self.set_resolution(config.resolution);
                     self.set_align(config.align);
                     self.set_scan(config.scan);
-                    self.set_external_trigger(config.external_trigger);
+                    self.set_regular_channel_external_trigger(config.external_trigger);
+
                     self.set_continuous(config.continuous);
                     self.set_dma(config.dma);
                     self.set_end_of_conversion_interrupt(config.end_of_conversion_interrupt);
@@ -656,11 +690,19 @@ macro_rules! adc {
                 }
 
                 /// Sets which external trigger to use and if it is disabled, rising, falling or both
-                pub fn set_external_trigger(&mut self, (edge, extsel): (config::TriggerMode, config::ExternalTrigger)) {
+                pub fn set_regular_channel_external_trigger(&mut self, (edge, extsel): (config::TriggerMode, config::ExternalTrigger)) {
                     self.config.external_trigger = (edge, extsel);
                     self.adc_reg.ctrl2().modify(|_, w| unsafe { w
                         .extrsel().bits(extsel as _)
                         .extrtrig().bit(edge.into()) }
+                    );
+                }
+                /// Sets which external trigger to use and if it is disabled, rising, falling or both
+                pub fn set_injected_channel_external_trigger(&mut self, (edge, extsel): (config::TriggerMode, config::ExternalTrigger)) {
+                    self.config.external_trigger = (edge, extsel);
+                    self.adc_reg.ctrl2().modify(|_, w| unsafe { w
+                        .extjsel().bits(extsel as _)
+                        .extjtrig().bit(edge.into()) }
                     );
                 }
 
@@ -712,11 +754,18 @@ macro_rules! adc {
                     self.adc_reg.rseq1().read().len().bits() + 1
                 }
 
-                /// Reset the sequence
-                pub fn reset_sequence(&mut self) {
+                /// Reset the regular sequence
+                pub fn reset_regular_sequence(&mut self) {
                     //The reset state is One conversion selected
-                    self.adc_reg.rseq1().modify(|_, w| unsafe { w.len().bits(config::Sequence::One.into())});
+                    self.adc_reg.rseq1().modify(|_, w| unsafe { w.len().bits(config::RegularSequence::One.into())});
                 }
+                
+                /// Reset the injected sequence
+                pub fn reset_injected_sequence(&mut self) {
+                    //The reset state is One conversion selected
+                    self.adc_reg.jseq().modify(|_, w| unsafe { w.jlen().bits(config::InjectedSequence::One.into())});
+                }
+
 
                 /// Returns the address of the ADC data register. Primarily useful for configuring DMA.
                 pub fn data_register_address(&mut self) -> u32 {
@@ -730,13 +779,13 @@ macro_rules! adc {
                 /// * `sequence` - where in the sequence to sample the channel. Also called rank in some STM docs/code
                 /// * `sample_time` - how long to sample for. See datasheet and ref manual to work out how long you need\
                 /// to sample for at a given ADC clock frequency
-                pub fn configure_channel<CHANNEL>(&mut self, _channel: &CHANNEL, sequence: config::Sequence, sample_time: config::SampleTime)
+                pub fn configure_regular_channel<CHANNEL>(&mut self, _channel: &CHANNEL, sequence: config::RegularSequence, sample_time: config::SampleTime)
                 where
                     CHANNEL: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>
                 {
                     //Check the sequence is long enough
                     self.adc_reg.rseq1().modify(|r, w| {
-                        let prev: config::Sequence = r.len().bits().into();
+                        let prev: config::RegularSequence = r.len().bits().into();
                         if prev < sequence {
                             unsafe { w.len().bits(sequence.into()) }
                         } else {
@@ -748,22 +797,22 @@ macro_rules! adc {
 
                     //Set the channel in the right sequence field
                     match sequence {
-                        config::Sequence::One      => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq1().bits(channel) }),
-                        config::Sequence::Two      => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq2().bits(channel) }),
-                        config::Sequence::Three    => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq3().bits(channel) }),
-                        config::Sequence::Four     => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq4().bits(channel) }),
-                        config::Sequence::Five     => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq5().bits(channel) }),
-                        config::Sequence::Six      => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq6().bits(channel) }),
-                        config::Sequence::Seven    => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq7().bits(channel) }),
-                        config::Sequence::Eight    => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq8().bits(channel) }),
-                        config::Sequence::Nine     => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq9().bits(channel) }),
-                        config::Sequence::Ten      => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq10().bits(channel) }),
-                        config::Sequence::Eleven   => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq11().bits(channel) }),
-                        config::Sequence::Twelve   => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq12().bits(channel) }),
-                        config::Sequence::Thirteen => self.adc_reg.rseq1().modify(|_, w| unsafe {w.seq13().bits(channel) }),
-                        config::Sequence::Fourteen => self.adc_reg.rseq1().modify(|_, w| unsafe {w.seq14().bits(channel) }),
-                        config::Sequence::Fifteen  => self.adc_reg.rseq1().modify(|_, w| unsafe {w.seq15().bits(channel) }),
-                        config::Sequence::Sixteen  => self.adc_reg.rseq1().modify(|_, w| unsafe {w.seq16().bits(channel) }),
+                        config::RegularSequence::One      => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq1().bits(channel) }),
+                        config::RegularSequence::Two      => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq2().bits(channel) }),
+                        config::RegularSequence::Three    => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq3().bits(channel) }),
+                        config::RegularSequence::Four     => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq4().bits(channel) }),
+                        config::RegularSequence::Five     => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq5().bits(channel) }),
+                        config::RegularSequence::Six      => self.adc_reg.rseq3().modify(|_, w| unsafe {w.seq6().bits(channel) }),
+                        config::RegularSequence::Seven    => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq7().bits(channel) }),
+                        config::RegularSequence::Eight    => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq8().bits(channel) }),
+                        config::RegularSequence::Nine     => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq9().bits(channel) }),
+                        config::RegularSequence::Ten      => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq10().bits(channel) }),
+                        config::RegularSequence::Eleven   => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq11().bits(channel) }),
+                        config::RegularSequence::Twelve   => self.adc_reg.rseq2().modify(|_, w| unsafe {w.seq12().bits(channel) }),
+                        config::RegularSequence::Thirteen => self.adc_reg.rseq1().modify(|_, w| unsafe {w.seq13().bits(channel) }),
+                        config::RegularSequence::Fourteen => self.adc_reg.rseq1().modify(|_, w| unsafe {w.seq14().bits(channel) }),
+                        config::RegularSequence::Fifteen  => self.adc_reg.rseq1().modify(|_, w| unsafe {w.seq15().bits(channel) }),
+                        config::RegularSequence::Sixteen  => self.adc_reg.rseq1().modify(|_, w| unsafe {w.seq16().bits(channel) }),
                     }
 
                     //Set the sample time for the channel
@@ -792,15 +841,126 @@ macro_rules! adc {
                     }
                 }
 
+                /// Configure a channel for sampling.
+                /// It will make sure the sequence is at least as long as the `sequence` provided.
+                /// # Arguments
+                /// * `channel` - channel to configure
+                /// * `sequence` - where in the sequence to sample the channel. Also called rank in some STM docs/code
+                /// * `sample_time` - how long to sample for. See datasheet and ref manual to work out how long you need\
+                /// to sample for at a given ADC clock frequency
+                pub fn configure_injected_channel<CHANNEL>(&mut self, _channel: &CHANNEL, sequence: config::InjectedSequence, sample_time: config::SampleTime)
+                where
+                    CHANNEL: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>
+                {
+                    //Check the sequence is long enough
+                    self.adc_reg.rseq1().modify(|r, w| {
+                        let prev: config::InjectedSequence = r.len().bits().into();
+                        if prev < sequence {
+                            unsafe { w.len().bits(sequence.into()) }
+                        } else {
+                            w
+                        }
+                    });
+
+                    let channel = CHANNEL::channel();
+
+                    //Set the channel in the right sequence field
+                    match sequence {
+                        config::InjectedSequence::One      => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq1().bits(channel) }),
+                        config::InjectedSequence::Two      => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq2().bits(channel) }),
+                        config::InjectedSequence::Three    => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq3().bits(channel) }),
+                        config::InjectedSequence::Four     => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq4().bits(channel) }),
+                    }
+
+                    //Set the sample time for the channel
+                    let st = sample_time as u8;
+                    match channel {
+                        0 => self.adc_reg.smpr2().modify(|_, w| unsafe {w.samp0().bits(st)}),
+                        1 => self.adc_reg.smpr2().modify(|_, w| unsafe {w.samp1().bits(st)}),
+                        2 => self.adc_reg.smpr2().modify(|_, w| unsafe {w.samp2().bits(st)}),
+                        3 => self.adc_reg.smpr2().modify(|_, w| unsafe {w.samp3().bits(st)}),
+                        4 => self.adc_reg.smpr2().modify(|_, w| unsafe {w.samp4().bits(st)}),
+                        5 => self.adc_reg.smpr2().modify(|_, w| unsafe {w.samp5().bits(st)}),
+                        6 => self.adc_reg.smpr2().modify(|_, w| unsafe {w.samp6().bits(st)}),
+                        7 => self.adc_reg.smpr2().modify(|_, w| unsafe {w.samp7().bits(st)}),
+                        8 => self.adc_reg.smpr2().modify(|_, w| unsafe {w.samp8().bits(st)}),
+                        9 => self.adc_reg.smpr2().modify(|_, w| unsafe {w.samp9().bits(st)}),
+                        10 => self.adc_reg.smpr1().modify(|_, w| unsafe {w.samp10().bits(st)}),
+                        11 => self.adc_reg.smpr1().modify(|_, w| unsafe {w.samp11().bits(st)}),
+                        12 => self.adc_reg.smpr1().modify(|_, w| unsafe {w.samp12().bits(st)}),
+                        13 => self.adc_reg.smpr1().modify(|_, w| unsafe {w.samp13().bits(st)}),
+                        14 => self.adc_reg.smpr1().modify(|_, w| unsafe {w.samp14().bits(st)}),
+                        15 => self.adc_reg.smpr1().modify(|_, w| unsafe {w.samp15().bits(st)}),
+                        16 => self.adc_reg.smpr1().modify(|_, w| unsafe {w.samp16().bits(st)}),
+                        17 => self.adc_reg.smpr1().modify(|_, w| unsafe {w.samp17().bits(st)}),
+                        18 => self.adc_reg.sampt3().modify(|_, w| unsafe {w.samp().bits(st)}),
+                        _ => unimplemented!(),
+                    }
+                }
+
+
                 /// Returns the current sample stored in the ADC data register
                 pub fn current_sample(&self) -> u16 {
                     self.adc_reg.dat().read().jdat().bits()
                 }
 
+
+                /// Returns the current injected sample stored in the ADC data register
+                pub fn injected_sample(&self, seq : config::InjectedSequence) -> u16 {
+                    match seq {
+                        config::InjectedSequence::One      => self.adc_reg.jdat1().read().jdat1().bits(),
+                        config::InjectedSequence::Two      => self.adc_reg.jdat2().read().jdat2().bits(),
+                        config::InjectedSequence::Three    => self.adc_reg.jdat3().read().jdat3().bits(),
+                        config::InjectedSequence::Four     => self.adc_reg.jdat4().read().jdat4().bits(),
+                    }
+                }
+
+                /// Returns the current injected sample stored in the ADC data register
+                pub fn get_injected_offset(&self, seq : config::InjectedSequence) -> u16 {
+                    match seq {
+                        config::InjectedSequence::One      => self.adc_reg.joffset1().read().offsetjch2().bits(),
+                        config::InjectedSequence::Two      => self.adc_reg.joffset2().read().offsetjch2().bits(),
+                        config::InjectedSequence::Three    => self.adc_reg.joffset3().read().offsetjch3().bits(),
+                        config::InjectedSequence::Four     => self.adc_reg.joffset4().read().offsetjch4().bits(),
+                    }
+                }
+
+                /// Returns the current injected sample stored in the ADC data register
+                pub fn set_injected_offset(&self, seq : config::InjectedSequence, offset : i16) {
+                    match seq {
+                        config::InjectedSequence::One      => self.adc_reg.joffset1().modify(|_,w| unsafe { w.offsetjch2().bits(offset as u16) }),
+                        config::InjectedSequence::Two      => self.adc_reg.joffset2().modify(|_,w| unsafe { w.offsetjch2().bits(offset as u16) }),
+                        config::InjectedSequence::Three    => self.adc_reg.joffset3().modify(|_,w| unsafe { w.offsetjch3().bits(offset as u16) }),
+                        config::InjectedSequence::Four     => self.adc_reg.joffset4().modify(|_,w| unsafe { w.offsetjch4().bits(offset as u16) }),
+                    }
+                }
+
+                /// Returns the current injected sample stored in the ADC data register
+                pub fn shift_injected_offset(&self, seq : config::InjectedSequence, offset : i16) {
+                    match seq {
+                        config::InjectedSequence::One      => self.adc_reg.joffset1().modify(|r,w| unsafe {  
+                            let cur_offset = ((r.offsetjch2().bits() as i16) << 4) >> 4;
+                            w.offsetjch2().bits((cur_offset + offset) as u16) 
+                        }),
+                        config::InjectedSequence::Two      => self.adc_reg.joffset2().modify(|r,w| unsafe {  
+                            let cur_offset = ((r.offsetjch2().bits() as i16) << 4) >> 4;
+                            w.offsetjch2().bits((cur_offset + offset) as u16) 
+                        }),
+                        config::InjectedSequence::Three    => self.adc_reg.joffset3().modify(|r,w| unsafe {  
+                            let cur_offset = ((r.offsetjch3().bits() as i16) << 4) >> 4;
+                            w.offsetjch3().bits((cur_offset + offset) as u16) 
+                        }),
+                        config::InjectedSequence::Four     => self.adc_reg.joffset4().modify(|r,w| unsafe {  
+                            let cur_offset = ((r.offsetjch4().bits() as i16) << 4) >> 4;
+                            w.offsetjch4().bits((cur_offset + offset) as u16) 
+                        }),
+                    }
+                }
+
                 /// Block until the conversion is completed
                 /// # Panics
                 /// Will panic if there is no conversion started and the end-of-conversion bit is not set
-                pub fn wait_for_conversion_sequence(&self) {
+                pub fn wait_for_regular_conversion_sequence(&self) {
                     if !self.adc_reg.sts().read().str().bit_is_set() && !self.adc_reg.sts().read().endc().bit_is_set() {
                         panic!("Waiting for end-of-conversion but no conversion started");
                     }
@@ -808,6 +968,19 @@ macro_rules! adc {
                     //Clear the conversion started flag
                     self.adc_reg.sts().modify(|_, w| w.str().clear_bit());
                 }
+
+                /// Block until the conversion is completed
+                /// # Panics
+                /// Will panic if there is no conversion started and the end-of-conversion bit is not set
+                pub fn wait_for_injected_conversion_sequence(&self) {
+                    if !self.adc_reg.sts().read().jstr().bit_is_set() && !self.adc_reg.sts().read().jendc().bit_is_set() {
+                        panic!("Waiting for end-of-conversion but no conversion started");
+                    }
+                    while !self.adc_reg.sts().read().jendc().bit_is_set() {}
+                    //Clear the conversion started flag
+                    self.adc_reg.sts().modify(|_, w| w.jstr().clear_bit());
+                }
+
 
                 /// Synchronously convert a single sample
                 /// Note that it reconfigures the adc sequence and doesn't restore it
@@ -827,14 +1000,14 @@ macro_rules! adc {
                     self.adc_reg.ctrl3().modify(|_, w| w
                         .endcaien().clear_bit() //Disable scan mode
                     );
-                    self.reset_sequence();
-                    self.configure_channel(pin, config::Sequence::One, sample_time);
+                    self.reset_regular_sequence();
+                    self.configure_regular_channel(pin, config::RegularSequence::One, sample_time);
                     self.enable();
                     self.clear_end_of_conversion_flag();
                     self.start_conversion();
 
                     //Wait for the sequence to complete
-                    self.wait_for_conversion_sequence();
+                    self.wait_for_regular_conversion_sequence();
 
                     let result = self.current_sample();
 
@@ -874,28 +1047,116 @@ macro_rules! adc {
                     self.read::<PIN>(pin)
                 }
             }
-
-            // unsafe impl PeriAddress for Adc<pac::$adc_type> {
-            //     #[inline(always)]
-            //     fn address(&self) -> u32 {
-            //         self.adc_reg.dat().as_ptr() as u32
-            //     }
-
-            //     type MemSize = u16;
-            // }
         )+
     };
 }
 
-// unsafe impl<ADC, STREAM> DMASet<STREAM, PeripheralToMemory> for Adc<ADC> where
-//     ADC: DMASet<STREAM, PeripheralToMemory>
-// {
-// }
 
-adc!(ADC1 => (adc1, 8));
 
-adc!(ADC2 => (adc2, 9));
+adc!(ADC1 => (adc1));
 
-adc!(ADC3 => (adc3, 10));
+adc!(ADC2 => (adc2));
 
-adc!(ADC4 => (adc4, 10));
+adc!(ADC3 => (adc3));
+
+adc!(ADC4 => (adc4));
+
+
+macro_rules! adc_map {
+    ($adc_type:ident => { $(($channel_type:ty , $channel_id:tt)),+ $(,)* }) => {
+        $(
+            impl embedded_hal_02::adc::Channel<crate::pac::$adc_type> for $channel_type {
+                type ID = u8;
+
+                fn channel() -> Self::ID {
+                    $channel_id
+                }
+            }
+        )*
+    };
+}
+mod mappings {
+    use crate::gpio::*;
+    use super::*;
+    adc_map! {
+        ADC1 => {
+            (PA0<crate::gpio::Analog>, 1),
+            (PA1<crate::gpio::Analog>, 2),
+            (PA6<crate::gpio::Analog>, 3),
+            (PA3<crate::gpio::Analog>, 4),
+            (PF4<crate::gpio::Analog>, 5),
+            (PC0<crate::gpio::Analog>, 6),
+            (PC1<crate::gpio::Analog>, 7),
+            (PC2<crate::gpio::Analog>, 8),
+            (PC3<crate::gpio::Analog>, 9),
+            (PF2<crate::gpio::Analog>, 10),
+            (PA2<crate::gpio::Analog>, 11),
+            (Temperature, 16),
+            (Vbat, 17),
+            (Vref, 18),
+        }
+    }
+    adc_map! {
+        ADC2 => {
+            (PA4<crate::gpio::Analog>, 1),
+            (PA5<crate::gpio::Analog>, 2),
+            (PB1<crate::gpio::Analog>, 3),
+            (PA7<crate::gpio::Analog>, 4),
+            (PC4<crate::gpio::Analog>, 5),
+            (PC0<crate::gpio::Analog>, 6),
+            (PC1<crate::gpio::Analog>, 7),
+            (PC2<crate::gpio::Analog>, 8),
+            (PC3<crate::gpio::Analog>, 9),
+            (PF2<crate::gpio::Analog>, 10),
+            (PA2<crate::gpio::Analog>, 11),
+            (PC5<crate::gpio::Analog>, 12),
+            (PB2<crate::gpio::Analog>, 13),
+
+            (Vref, 18),
+        }
+    }
+    adc_map! {
+        ADC3 => {
+            (PB11<crate::gpio::Analog>, 1),
+            (PE9<crate::gpio::Analog>, 2),
+            (PE13<crate::gpio::Analog>, 3),
+            (PE12<crate::gpio::Analog>, 4),
+            (PB13<crate::gpio::Analog>, 5),
+            (PE8<crate::gpio::Analog>, 6),
+            (PD10<crate::gpio::Analog>, 7),
+            (PD11<crate::gpio::Analog>, 8),
+            (PD12<crate::gpio::Analog>, 9),
+            (PD13<crate::gpio::Analog>, 10),
+            (PD14<crate::gpio::Analog>, 11),
+            (PB0<crate::gpio::Analog>, 12),
+            (PE7<crate::gpio::Analog>, 13),
+            (PE10<crate::gpio::Analog>, 14),
+            (PE11<crate::gpio::Analog>, 15),
+
+            (Vref, 18),
+        }
+    }
+    adc_map! {
+        ADC4 => {
+            (PE14<crate::gpio::Analog>, 1),
+            (PE15<crate::gpio::Analog>, 2),
+            (PB12<crate::gpio::Analog>, 3),
+            (PB14<crate::gpio::Analog>, 4),
+            (PB15<crate::gpio::Analog>, 5),
+            (PE8<crate::gpio::Analog>, 6),
+            (PD10<crate::gpio::Analog>, 7),
+            (PD11<crate::gpio::Analog>, 8),
+            (PD12<crate::gpio::Analog>, 9),
+            (PD13<crate::gpio::Analog>, 10),
+            (PD14<crate::gpio::Analog>, 11),
+            (PD8<crate::gpio::Analog>, 12),
+            (PD9<crate::gpio::Analog>, 13),
+            
+            (Vref, 18),
+
+        }
+    }
+
+}
+
+

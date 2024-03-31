@@ -515,7 +515,6 @@ macro_rules! gpio {
         pub use $gpiox::{ $($PXi,)+ };
     }
 }
-use gpio;
 
 
 const fn gpiox<const P: char>() -> *const crate::pac::gpioa::RegisterBlock {

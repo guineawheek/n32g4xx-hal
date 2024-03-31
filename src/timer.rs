@@ -4,7 +4,6 @@
 //! (`AlternateOD`).
 #![allow(non_upper_case_globals)]
 
-use core::convert::TryFrom;
 use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::peripheral::SYST;
 use enumflags2::BitFlags;
@@ -582,7 +581,6 @@ macro_rules! hal {
         })?
     };
 }
-use hal;
 
 macro_rules! with_dmar {
     ($TIM:ty, $memsize:ty) => {

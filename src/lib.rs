@@ -4,7 +4,6 @@
 #![doc = document_features::document_features!()]
 #![no_std]
 #![allow(non_camel_case_types)]
-#![feature(associated_type_bounds)]
 #![feature(associated_type_defaults)]
 #![feature(impl_trait_in_assoc_type)]
 #![feature(negative_impls)]

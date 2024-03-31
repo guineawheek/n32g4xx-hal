@@ -308,7 +308,6 @@ macro_rules! halUart {
     };
 }
 
-pub(crate) use halUsart;
 
 halUsart! { pac::USART1, usart1, Serial1, Rx1, Tx1 }
 halUsart! { pac::USART2, usart1, Serial2, Rx2, Tx2 }

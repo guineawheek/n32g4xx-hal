@@ -19,9 +19,8 @@ impl<PER,Mapper> !RemapIO<PER,Mapper> for NoPin {
 }
 
 pub mod spi1 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, Floating, Input, NoPin, PushPull};
+    use crate::gpio::{self, Input, PushPull};
     use crate::{gpio::alt::altmap::pin, pac::SPI1 as SPI};
 
     pub struct SPI1NoRemapRemapper();
@@ -127,9 +126,8 @@ pub mod spi1 {
 }
 
 pub mod spi2 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, Floating, NoPin, PushPull};
+    use crate::gpio::{self, PushPull};
     use crate::{gpio::alt::altmap::pin, pac::SPI2 as SPI};
 
     pub struct SPI2NoRemapRemapper();
@@ -216,9 +214,8 @@ pub mod spi2 {
 }
 
 pub mod spi3 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, Floating, Input, NoPin, PushPull};
+    use crate::gpio::{self, Input, PushPull};
     use crate::{gpio::alt::altmap::pin, pac::SPI3 as SPI};
 
     pub struct SPI3NoRemapRemapper();
@@ -326,9 +323,8 @@ pub mod spi3 {
 
 
 pub mod usart1 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, NoPin, PushPull,Input};
+    use crate::gpio::{self, PushPull,Input};
 
     pub struct USART1NoRemapRemapper();
     pub struct USART1FullRemapRemapper();
@@ -404,9 +400,8 @@ pub mod usart1 {
 }
 
 pub mod usart2 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, NoPin, PushPull,Input};
+    use crate::gpio::{self, PushPull,Input};
     use crate::{gpio::alt::altmap::pin, pac::USART2 as USART};
 
     pub struct USART2NoRemapRemapper();
@@ -540,9 +535,8 @@ pub mod usart2 {
 
 
 pub mod usart3 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, NoPin, PushPull,Input};
+    use crate::gpio::{self, PushPull,Input};
     use crate::{gpio::alt::altmap::pin, pac::USART3 as USART};
 
     pub struct USART3NoRemapRemapper();
@@ -652,9 +646,8 @@ pub mod usart3 {
 
 
 pub mod uart4 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, NoPin, PushPull,Input};
+    use crate::gpio::{self, PushPull,Input};
     use crate::{gpio::alt::altmap::pin, pac::UART4 as UART};
 
     pub struct UART4NoRemapRemapper();
@@ -727,9 +720,8 @@ pub mod uart4 {
 }
 
 pub mod uart5 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, NoPin, PushPull,Input};
+    use crate::gpio::{self, PushPull,Input};
     use crate::{gpio::alt::altmap::pin, pac::UART5 as UART};
 
     pub struct UART5NoRemapRemapper();
@@ -801,9 +793,8 @@ pub mod uart5 {
 }
 
 pub mod uart6 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, NoPin, PushPull,Input};
+    use crate::gpio::{self, PushPull,Input};
     use crate::{gpio::alt::altmap::pin, pac::UART6 as UART};
 
     pub(crate) struct UART6NoRemapRemapper();
@@ -862,9 +853,8 @@ pub mod uart6 {
 }
 
 pub mod uart7 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, NoPin, PushPull,Input};
+    use crate::gpio::{self, PushPull,Input};
     use crate::{gpio::alt::altmap::pin, pac::UART7 as UART};
 
     pub(crate) struct UART7NoRemapRemapper();
@@ -924,9 +914,8 @@ pub mod uart7 {
 
 
 pub mod tim2 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, NoPin, PushPull};
+    use crate::gpio::{self, PushPull};
     use crate::{gpio::alt::altmap::pin, pac::TIM2 as TIM};
 
     pub struct TIM2NoRemapRemapper();
@@ -1038,9 +1027,8 @@ pub mod tim2 {
 
 
 pub mod tim1 {
-    use self::altmap::{Remap, RemapIO};
     use super::*;
-    use crate::gpio::{self, NoPin, PushPull};
+    use crate::gpio::{self, PushPull};
     use crate::{gpio::alt::altmap::pin, pac::TIM1 as TIM};
 
     pub struct TIM1NoRemapRemapper();

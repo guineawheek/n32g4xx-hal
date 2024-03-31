@@ -128,7 +128,6 @@ impl<const P: char, const N: u8, MODE: PinMode> Pin<P, N, MODE> {
     }
 }
 
-use super::ErasedPin;
 impl<MODE: PinMode> ErasedPin<MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
@@ -174,7 +173,6 @@ impl<MODE: PinMode> ErasedPin<MODE> {
     }
 }
 
-use super::PartiallyErasedPin;
 impl<const P: char, MODE: PinMode> PartiallyErasedPin<P, MODE> {
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
