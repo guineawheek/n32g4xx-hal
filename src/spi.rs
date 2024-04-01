@@ -1165,16 +1165,18 @@ macro_rules! spi_dma {
         RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel,
         TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel
         {
-            fn with_tx_dma(self, channel: TXCH) -> SpiTxDma<$SPIi, XFER_MODE, TXCH> {
+            fn with_tx_dma(self, mut channel: TXCH) -> SpiTxDma<$SPIi, XFER_MODE, TXCH> {
                 self.spi.ctrl2().modify(|_, w| w.tdmaen().set_bit());
+                channel.configure_channel();
                 SpiTxDma {
                     payload: self,
                     channel,
                 }
             }
-            fn with_rx_dma(self, channel: RXCH) -> SpiRxDma<$SPIi, XFER_MODE, RXCH>
+            fn with_rx_dma(self, mut channel: RXCH) -> SpiRxDma<$SPIi, XFER_MODE, RXCH>
             {
                self.spi.ctrl2().modify(|_, w| w.rdmaen().set_bit());
+               channel.configure_channel();
                SpiRxDma {
                    payload: self,
                    channel,
@@ -1182,12 +1184,15 @@ macro_rules! spi_dma {
            }
             fn with_rx_tx_dma(
                 self,
-                rxchannel: RXCH,
-                txchannel: TXCH,
+                mut rxchannel: RXCH,
+                mut txchannel: TXCH,
             ) -> SpiRxTxDma<$SPIi, XFER_MODE, RXCH, TXCH> {
                 self.spi
                 .ctrl2()
                 .modify(|_, w| w.rdmaen().set_bit().tdmaen().set_bit());
+                rxchannel.configure_channel();
+                txchannel.configure_channel();
+                
                 SpiRxTxDma {
                     payload: self,
                     rxchannel,
@@ -1250,24 +1255,25 @@ macro_rules! spi_dma {
         impl<const XFER_MODE : TransferMode,TXCH: crate::dma::CompatibleChannel<$SPIi,W> + crate::dma::DMAChannel> TransferPayload for SpiTxDma<$SPIi, XFER_MODE, TXCH> {
             fn start(&mut self) {
                 self.channel.start();
-                if XFER_MODE == TransferMode::TransferModeRecieveOnly {
-                    self.payload.enable(true);
-                }
             }
             fn stop(&mut self) {
                 self.channel.stop();
-                if XFER_MODE == TransferMode::TransferModeRecieveOnly {
-                    self.payload.enable(false);
-                }
             }
         }
 
         impl<const XFER_MODE : TransferMode,RXCH: crate::dma::CompatibleChannel<$SPIi,R> + crate::dma::DMAChannel> TransferPayload for SpiRxDma<$SPIi, XFER_MODE, RXCH> {
             fn start(&mut self) {
                 self.channel.start();
+                if XFER_MODE == TransferMode::TransferModeRecieveOnly {
+                    self.payload.enable(true);
+                }
+
             }
             fn stop(&mut self) {
                 self.channel.stop();
+                if XFER_MODE == TransferMode::TransferModeRecieveOnly {
+                    self.payload.enable(false);
+                }
             }
         }
 
