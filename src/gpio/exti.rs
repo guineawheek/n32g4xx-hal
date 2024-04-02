@@ -1,7 +1,7 @@
-use n32g4::n32g455::AFIO;
+use n32g4::n32g455::Afio;
 
 use super::{marker, Edge, Pin, PinExt};
-use crate::pac::{Interrupt, EXTI};
+use crate::pac::{Interrupt, Exti};
 
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     /// NVIC interrupt number of interrupt from this pin
@@ -24,17 +24,17 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
 
 /// External Interrupt Pin
 pub trait ExtiPin {
-    /// Make corresponding EXTI line sensitive to this pin
-    fn make_interrupt_source(&mut self, syscfg: &mut AFIO);
+    /// Make corresponding Exti line sensitive to this pin
+    fn make_interrupt_source(&mut self, syscfg: &mut Afio);
 
     /// Generate interrupt on rising edge, falling edge or both
-    fn trigger_on_edge(&mut self, exti: &mut EXTI, level: Edge);
+    fn trigger_on_edge(&mut self, exti: &mut Exti, level: Edge);
 
     /// Enable external interrupts from this pin.
-    fn enable_interrupt(&mut self, exti: &mut EXTI);
+    fn enable_interrupt(&mut self, exti: &mut Exti);
 
     /// Disable external interrupts from this pin
-    fn disable_interrupt(&mut self, exti: &mut EXTI);
+    fn disable_interrupt(&mut self, exti: &mut Exti);
 
     /// Clear the interrupt pending bit for this pin
     fn clear_interrupt_pending_bit(&mut self);
@@ -49,7 +49,7 @@ where
     PIN::Mode: marker::Interruptible,
 {
     #[inline(always)]
-    fn make_interrupt_source(&mut self, afio: &mut AFIO) {
+    fn make_interrupt_source(&mut self, afio: &mut Afio) {
         let i = self.pin_id();
         let port = self.port_id() as u32;
         let offset = 4 * (i % 4);
@@ -79,7 +79,7 @@ where
     }
 
     #[inline(always)]
-    fn trigger_on_edge(&mut self, exti: &mut EXTI, edge: Edge) {
+    fn trigger_on_edge(&mut self, exti: &mut Exti, edge: Edge) {
         let i = self.pin_id();
         match edge {
             Edge::Rising => {
@@ -104,24 +104,24 @@ where
     }
 
     #[inline(always)]
-    fn enable_interrupt(&mut self, exti: &mut EXTI) {
+    fn enable_interrupt(&mut self, exti: &mut Exti) {
         exti.imask()
             .modify(|r, w| unsafe { w.bits(r.bits() | (1 << self.pin_id())) });
     }
 
     #[inline(always)]
-    fn disable_interrupt(&mut self, exti: &mut EXTI) {
+    fn disable_interrupt(&mut self, exti: &mut Exti) {
         exti.imask()
             .modify(|r, w| unsafe { w.bits(r.bits() & !(1 << self.pin_id())) });
     }
 
     #[inline(always)]
     fn clear_interrupt_pending_bit(&mut self) {
-        unsafe { (*EXTI::ptr()).pend().write(|w| w.bits(1 << self.pin_id())) };
+        unsafe { (*Exti::ptr()).pend().write(|w| w.bits(1 << self.pin_id())) };
     }
 
     #[inline(always)]
     fn check_interrupt(&self) -> bool {
-        unsafe { ((*EXTI::ptr()).pend().read().bits() & (1 << self.pin_id())) != 0 }
+        unsafe { ((*Exti::ptr()).pend().read().bits() & (1 << self.pin_id())) != 0 }
     }
 }

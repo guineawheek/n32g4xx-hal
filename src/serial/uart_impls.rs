@@ -442,7 +442,7 @@ impl<UART: Instance> SerialExt for UART {
         pins: (TX,RX),
         config: impl Into<config::Config>,
         clocks: &Clocks,
-        afio: &mut crate::pac::AFIO
+        afio: &mut crate::pac::Afio
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig> {
         RMP::remap(afio);
         Serial::new(self, (pins.0.into(),pins.1.into()), config, clocks,afio)
@@ -452,7 +452,7 @@ impl<UART: Instance> SerialExt for UART {
         tx_pin: TX,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-        afio: &mut crate::pac::AFIO
+        afio: &mut crate::pac::Afio
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
     where
         NoPin<Input>: Into<Self::Rx<Floating>>,
@@ -465,7 +465,7 @@ impl<UART: Instance> SerialExt for UART {
         rx_pin: RX,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-        afio: &mut crate::pac::AFIO
+        afio: &mut crate::pac::Afio
     ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
     where
         NoPin<PushPull>: Into<Self::Tx<PushPull>>,
@@ -481,7 +481,7 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         tx_pin: impl Into<UART::Tx<PushPull>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-        afio: &mut crate::pac::AFIO
+        afio: &mut crate::pac::Afio
     ) -> Result<Tx<UART, WORD>, config::InvalidConfig>
     where
         NoPin<Input>: Into<UART::Rx<Floating>>,
@@ -496,7 +496,7 @@ impl<UART: Instance, WORD> Serial<UART, WORD> {
         rx_pin: impl Into<UART::Rx<Floating>>,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-        afio: &mut crate::pac::AFIO
+        afio: &mut crate::pac::Afio
     ) -> Result<Rx<UART, WORD>, config::InvalidConfig>
     where
     NoPin<PushPull>: Into<UART::Tx<PushPull>>,

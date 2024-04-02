@@ -597,7 +597,7 @@ macro_rules! adc {
                     unsafe {
                         // All ADCs share the same reset interface.
                         // NOTE(unsafe) this reference will only be used for atomic writes with no side effects.
-                        let rcc = &(*pac::RCC::ptr());
+                        let rcc = &(*pac::Rcc::ptr());
 
                         //Enable the clock
                         pac::$adc_type::enable(rcc);
@@ -918,7 +918,7 @@ macro_rules! adc {
                 /// Returns the current injected sample stored in the ADC data register
                 pub fn get_injected_offset(&self, seq : config::InjectedSequence) -> u16 {
                     match seq {
-                        config::InjectedSequence::One      => self.adc_reg.joffset1().read().offsetjch2().bits(),
+                        config::InjectedSequence::One      => self.adc_reg.joffset1().read().offsetjch1().bits(),
                         config::InjectedSequence::Two      => self.adc_reg.joffset2().read().offsetjch2().bits(),
                         config::InjectedSequence::Three    => self.adc_reg.joffset3().read().offsetjch3().bits(),
                         config::InjectedSequence::Four     => self.adc_reg.joffset4().read().offsetjch4().bits(),
@@ -928,7 +928,7 @@ macro_rules! adc {
                 /// Returns the current injected sample stored in the ADC data register
                 pub fn set_injected_offset(&self, seq : config::InjectedSequence, offset : i16) {
                     match seq {
-                        config::InjectedSequence::One      => self.adc_reg.joffset1().modify(|_,w| unsafe { w.offsetjch2().bits(offset as u16) }),
+                        config::InjectedSequence::One      => self.adc_reg.joffset1().modify(|_,w| unsafe { w.offsetjch1().bits(offset as u16) }),
                         config::InjectedSequence::Two      => self.adc_reg.joffset2().modify(|_,w| unsafe { w.offsetjch2().bits(offset as u16) }),
                         config::InjectedSequence::Three    => self.adc_reg.joffset3().modify(|_,w| unsafe { w.offsetjch3().bits(offset as u16) }),
                         config::InjectedSequence::Four     => self.adc_reg.joffset4().modify(|_,w| unsafe { w.offsetjch4().bits(offset as u16) }),
@@ -939,8 +939,8 @@ macro_rules! adc {
                 pub fn shift_injected_offset(&self, seq : config::InjectedSequence, offset : i16) {
                     match seq {
                         config::InjectedSequence::One      => self.adc_reg.joffset1().modify(|r,w| unsafe {  
-                            let cur_offset = ((r.offsetjch2().bits() as i16) << 4) >> 4;
-                            w.offsetjch2().bits((cur_offset + offset) as u16) 
+                            let cur_offset = ((r.offsetjch1().bits() as i16) << 4) >> 4;
+                            w.offsetjch1().bits((cur_offset + offset) as u16) 
                         }),
                         config::InjectedSequence::Two      => self.adc_reg.joffset2().modify(|r,w| unsafe {  
                             let cur_offset = ((r.offsetjch2().bits() as i16) << 4) >> 4;
@@ -1053,13 +1053,13 @@ macro_rules! adc {
 
 
 
-adc!(ADC1 => (adc1));
+adc!(Adc1 => (adc1));
 
-adc!(ADC2 => (adc2));
+adc!(Adc2 => (adc2));
 
-adc!(ADC3 => (adc3));
+adc!(Adc3 => (adc3));
 
-adc!(ADC4 => (adc4));
+adc!(Adc4 => (adc4));
 
 
 macro_rules! adc_map {
@@ -1079,7 +1079,7 @@ mod mappings {
     use crate::gpio::*;
     use super::*;
     adc_map! {
-        ADC1 => {
+        Adc1 => {
             (PA0<crate::gpio::Analog>, 1),
             (PA1<crate::gpio::Analog>, 2),
             (PA6<crate::gpio::Analog>, 3),
@@ -1097,7 +1097,7 @@ mod mappings {
         }
     }
     adc_map! {
-        ADC2 => {
+        Adc2 => {
             (PA4<crate::gpio::Analog>, 1),
             (PA5<crate::gpio::Analog>, 2),
             (PB1<crate::gpio::Analog>, 3),
@@ -1116,7 +1116,7 @@ mod mappings {
         }
     }
     adc_map! {
-        ADC3 => {
+        Adc3 => {
             (PB11<crate::gpio::Analog>, 1),
             (PE9<crate::gpio::Analog>, 2),
             (PE13<crate::gpio::Analog>, 3),
@@ -1137,7 +1137,7 @@ mod mappings {
         }
     }
     adc_map! {
-        ADC4 => {
+        Adc4 => {
             (PE14<crate::gpio::Analog>, 1),
             (PE15<crate::gpio::Analog>, 2),
             (PB12<crate::gpio::Analog>, 3),

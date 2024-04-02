@@ -27,34 +27,34 @@ macro_rules! chmap_setup {
 
 //ADCs
 chmap_setup!(
-    crate::pac::ADC1: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 10, W => 15)),
-    crate::pac::ADC2: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 10, W => 15)),
-    crate::pac::ADC3: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 10, W => 15)),
-    crate::pac::ADC4: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 10, W => 15)),
+    crate::pac::Adc1: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 10, W => 15)),
+    crate::pac::Adc2: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 10, W => 15)),
+    crate::pac::Adc3: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 10, W => 15)),
+    crate::pac::Adc4: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 10, W => 15)),
 );
 
 //US?ARTs
 chmap_setup!(
-    crate::pac::USART1: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 23, W => 16)),
-    crate::pac::USART2: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 29, W => 34)),
-    crate::pac::USART3: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 11, W => 5)),
-    crate::pac::UART4: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 14, W => 24)),
-    crate::pac::UART5: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 40, W => 1)),
-    crate::pac::UART6: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 14, W => 12)),
-    crate::pac::UART7: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 27, W => 30)),
+    crate::pac::Usart1: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 23, W => 16)),
+    crate::pac::Usart2: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 29, W => 34)),
+    crate::pac::Usart3: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 11, W => 5)),
+    crate::pac::Uart4: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 14, W => 24)),
+    crate::pac::Uart5: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 40, W => 1)),
+    crate::pac::Uart6: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 14, W => 12)),
+    crate::pac::Uart7: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 27, W => 30)),
 );
 
 //I2Cs
 chmap_setup!(
-    crate::pac::I2C1: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 38, W => 33)),
-    crate::pac::I2C2: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 28, W => 22)),
-    crate::pac::I2C3: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 6, W => 2)),
+    crate::pac::I2c1: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 38, W => 33)),
+    crate::pac::I2c2: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 28, W => 22)),
+    crate::pac::I2c3: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 6, W => 2)),
 );
 
 //SPIs
 chmap_setup!(
-    crate::pac::SPI1: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 10, W => 15)),
-    crate::pac::SPI2: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 21, W => 25)),
-    crate::pac::SPI3: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 4, W => 11)),
+    crate::pac::Spi1: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 10, W => 15)),
+    crate::pac::Spi2: (dma1::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 21, W => 25)),
+    crate::pac::Spi3: (dma2::(C1,C2,C3,C4,C5,C6,C7,C8) => (R => 4, W => 11)),
 );
 

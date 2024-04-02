@@ -519,22 +519,22 @@ macro_rules! gpio {
 
 const fn gpiox<const P: char>() -> *const crate::pac::gpioa::RegisterBlock {
     match P {
-        'A' => crate::pac::GPIOA::ptr(),
-        'B' => crate::pac::GPIOB::ptr() as _,
-        'C' => crate::pac::GPIOC::ptr() as _,
-        'D' => crate::pac::GPIOD::ptr() as _,
+        'A' => crate::pac::Gpioa::ptr(),
+        'B' => crate::pac::Gpiob::ptr() as _,
+        'C' => crate::pac::Gpioc::ptr() as _,
+        'D' => crate::pac::Gpiod::ptr() as _,
         #[cfg(any(feature = "n32g451", feature = "n32g452", feature = "n32g455", feature = "n32g457", feature = "n32g4fr"))]
-        'E' => crate::pac::GPIOE::ptr() as _,
+        'E' => crate::pac::Gpioe::ptr() as _,
         #[cfg(any(feature = "n32g451", feature = "n32g452", feature = "n32g455", feature = "n32g457", feature = "n32g4fr"))]
-        'F' => crate::pac::GPIOF::ptr() as _,
+        'F' => crate::pac::Gpiof::ptr() as _,
         #[cfg(any(feature = "n32g451", feature = "n32g452", feature = "n32g455", feature = "n32g457", feature = "n32g4fr"))]
-        'G' => crate::pac::GPIOG::ptr() as _,
+        'G' => crate::pac::Gpiog::ptr() as _,
         _ => panic!("Unknown GPIO port"),
     }
 }
 
 
-gpio!(GPIOA, gpioa, PA, 'A', PAn, [
+gpio!(Gpioa, gpioa, PA, 'A', PAn, [
     PA0: (pa0, 0),
     PA1: (pa1, 1),
     PA2: (pa2, 2),
@@ -553,7 +553,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA15: (pa15, 15, super::Debugger), // JTDI, PullUp
 ]);
 
-gpio!(GPIOB, gpiob, PBx, 'B', PBn, [
+gpio!(Gpiob, gpiob, PBx, 'B', PBn, [
     PB0: (pb0, 0),
     PB1: (pb1, 1),
     PB2: (pb2, 2),
@@ -572,7 +572,7 @@ gpio!(GPIOB, gpiob, PBx, 'B', PBn, [
     PB15: (pb15, 15),
 ]);
 
-gpio!(GPIOC, gpioc, PCx, 'C', PCn, [
+gpio!(Gpioc, gpioc, PCx, 'C', PCn, [
     PC0: (pc0, 0),
     PC1: (pc1, 1),
     PC2: (pc2, 2),
@@ -591,7 +591,7 @@ gpio!(GPIOC, gpioc, PCx, 'C', PCn, [
     PC15: (pc15, 15),
 ]);
 
-gpio!(GPIOD, gpiod, PDx, 'D', PDn, [
+gpio!(Gpiod, gpiod, PDx, 'D', PDn, [
     PD0: (pd0, 0),
     PD1: (pd1, 1),
     PD2: (pd2, 2),
@@ -611,7 +611,7 @@ gpio!(GPIOD, gpiod, PDx, 'D', PDn, [
 ]);
 
 #[cfg(any(feature = "n32g451", feature = "n32g452", feature = "n32g455", feature = "n32g457", feature = "n32g4fr"))]
-gpio!(GPIOE, gpioe, PEx, 'E', PEn, [
+gpio!(Gpioe, gpioe, PEx, 'E', PEn, [
     PE0: (pe0, 0),
     PE1: (pe1, 1),
     PE2: (pe2, 2),
@@ -631,7 +631,7 @@ gpio!(GPIOE, gpioe, PEx, 'E', PEn, [
 ]);
 
 #[cfg(any(feature = "n32g451", feature = "n32g452", feature = "n32g455", feature = "n32g457", feature = "n32g4fr"))]
-gpio!(GPIOF, gpiof, PFx, 'F', PFn, [
+gpio!(Gpiof, gpiof, PFx, 'F', PFn, [
     PF0: (pf0, 0),
     PF1: (pf1, 1),
     PF2: (pf2, 2),
@@ -652,7 +652,7 @@ gpio!(GPIOF, gpiof, PFx, 'F', PFn, [
 
 
 #[cfg(any(feature = "n32g451", feature = "n32g452", feature = "n32g455", feature = "n32g457", feature = "n32g4fr"))]
-gpio!(GPIOG, gpiog, PGx, 'G', PGn, [
+gpio!(Gpiog, gpiog, PGx, 'G', PGn, [
     PG0: (pg0, 0),
     PG1: (pg1, 1),
     PG2: (pg2, 2),

@@ -1,7 +1,7 @@
 pub mod altmap;
 macro_rules! extipin {
     ($( $(#[$attr:meta])* $PX:ident,)*) => {
-        fn make_interrupt_source(&mut self, _syscfg: &mut $crate::pac::AFIO) {
+        fn make_interrupt_source(&mut self, _syscfg: &mut $crate::pac::Afio) {
             match self {
                 $(
                     $(#[$attr])*
@@ -12,7 +12,7 @@ macro_rules! extipin {
 
         }
 
-        fn trigger_on_edge(&mut self, _exti: &mut $crate::pac::EXTI, _level: $crate::gpio::Edge) {
+        fn trigger_on_edge(&mut self, _exti: &mut $crate::pac::Exti, _level: $crate::gpio::Edge) {
             match self {
                 $(
                     $(#[$attr])*
@@ -22,7 +22,7 @@ macro_rules! extipin {
             }
         }
 
-        fn enable_interrupt(&mut self, _exti: &mut $crate::pac::EXTI) {
+        fn enable_interrupt(&mut self, _exti: &mut $crate::pac::Exti) {
             match self {
                 $(
                     $(#[$attr])*
@@ -31,7 +31,7 @@ macro_rules! extipin {
                 _ => {},
             }
         }
-        fn disable_interrupt(&mut self, _exti: &mut $crate::pac::EXTI) {
+        fn disable_interrupt(&mut self, _exti: &mut $crate::pac::Exti) {
             match self {
                 $(
                     $(#[$attr])*

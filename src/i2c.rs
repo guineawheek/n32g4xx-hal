@@ -1,8 +1,8 @@
 use core::ops::Deref;
 
-use crate::pac::{self, I2C1, I2C2};
+use crate::pac::{self, I2c1, I2c2};
 #[cfg(any(feature = "n32g451",feature = "n32g452",feature = "n32g455",feature = "n32g457",feature = "n32g4fr"))]
-use crate::pac::{I2C3, I2C4};
+use crate::pac::{I2c3, I2c4};
 
 use crate::rcc::{Enable, Reset};
 
@@ -119,7 +119,7 @@ pub trait Pins<I2C>: Sized {
     const REMAP: bool;
 }
 
-impl Pins<pac::I2C1>
+impl Pins<pac::I2c1>
     for (
         gpio::PB6<Alternate<OpenDrain>>,
         gpio::PB7<Alternate<OpenDrain>>,
@@ -128,7 +128,7 @@ impl Pins<pac::I2C1>
     const REMAP: bool = false;
 }
 
-impl Pins<pac::I2C1>
+impl Pins<pac::I2c1>
     for (
         gpio::PB8<Alternate<OpenDrain>>,
         gpio::PB9<Alternate<OpenDrain>>,
@@ -137,7 +137,7 @@ impl Pins<pac::I2C1>
     const REMAP: bool = true;
 }
 
-impl Pins<pac::I2C2>
+impl Pins<pac::I2c2>
     for (
         gpio::PB10<Alternate<OpenDrain>>,
         gpio::PB11<Alternate<OpenDrain>>,
@@ -160,53 +160,53 @@ macro_rules! i2c {
     };
 }
 
-i2c! { pac::I2C1: I2c1 }
-i2c! { pac::I2C2: I2c2 }
+i2c! { pac::I2c1: I2c1Inst }
+i2c! { pac::I2c2: I2c2Inst }
 
 #[cfg(any(feature = "n32g451",feature = "n32g452",feature = "n32g455",feature = "n32g457",feature = "n32g4fr"))]
-i2c! { pac::I2C3: I2c3 }
+i2c! { pac::I2c3: I2c3Inst }
 #[cfg(any(feature = "n32g451",feature = "n32g452",feature = "n32g455",feature = "n32g457",feature = "n32g4fr"))]
-i2c! { pac::I2C4: I2c4 }
+i2c! { pac::I2c4: I2c4Inst }
 
-impl<PINS> I2c<I2C1, PINS> {
+impl<PINS> I2c<I2c1, PINS> {
     /// Creates a generic I2C2 object on pins PB10 and PB11 using the embedded-hal `BlockingI2c` trait.
-    pub fn i2c1<M: Into<Mode>>(i2c: I2C1, pins: PINS, mode: M, clocks: &Clocks) -> Self
+    pub fn i2c1<M: Into<Mode>>(i2c: I2c1, pins: PINS, mode: M, clocks: &Clocks) -> Self
     where
-        PINS: Pins<I2C1>,
+        PINS: Pins<I2c1>,
     {
-        I2c::<I2C1, _>::new(i2c, pins, mode, clocks)
+        I2c::<I2c1, _>::new(i2c, pins, mode, clocks)
     }
 }
 
-impl<PINS> I2c<I2C2, PINS> {
+impl<PINS> I2c<I2c2, PINS> {
     /// Creates a generic I2C2 object on pins PB10 and PB11 using the embedded-hal `BlockingI2c` trait.
-    pub fn i2c2<M: Into<Mode>>(i2c: I2C2, pins: PINS, mode: M, clocks: &Clocks) -> Self
+    pub fn i2c2<M: Into<Mode>>(i2c: I2c2, pins: PINS, mode: M, clocks: &Clocks) -> Self
     where
-        PINS: Pins<I2C2>,
+        PINS: Pins<I2c2>,
     {
-        I2c::<I2C2, _>::new(i2c, pins, mode, clocks)
-    }
-}
-
-#[cfg(any(feature = "n32g451",feature = "n32g452",feature = "n32g455",feature = "n32g457",feature = "n32g4fr"))]
-impl<PINS> I2c<I2C3, PINS> {
-    /// Creates a generic I2C2 object on pins PB10 and PB11 using the embedded-hal `BlockingI2c` trait.
-    pub fn i2c3<M: Into<Mode>>(i2c: I2C3, pins: PINS, mode: M, clocks: &Clocks) -> Self
-    where
-        PINS: Pins<I2C3>,
-    {
-        I2c::<I2C3, _>::new(i2c, pins, mode, clocks)
+        I2c::<I2c2, _>::new(i2c, pins, mode, clocks)
     }
 }
 
 #[cfg(any(feature = "n32g451",feature = "n32g452",feature = "n32g455",feature = "n32g457",feature = "n32g4fr"))]
-impl<PINS> I2c<I2C4, PINS> {
+impl<PINS> I2c<I2c3, PINS> {
     /// Creates a generic I2C2 object on pins PB10 and PB11 using the embedded-hal `BlockingI2c` trait.
-    pub fn i2c4<M: Into<Mode>>(i2c: I2C4, pins: PINS, mode: M, clocks: &Clocks) -> Self
+    pub fn i2c3<M: Into<Mode>>(i2c: I2c3, pins: PINS, mode: M, clocks: &Clocks) -> Self
     where
-        PINS: Pins<I2C4>,
+        PINS: Pins<I2c3>,
     {
-        I2c::<I2C4, _>::new(i2c, pins, mode, clocks)
+        I2c::<I2c3, _>::new(i2c, pins, mode, clocks)
+    }
+}
+
+#[cfg(any(feature = "n32g451",feature = "n32g452",feature = "n32g455",feature = "n32g457",feature = "n32g4fr"))]
+impl<PINS> I2c<I2c4, PINS> {
+    /// Creates a generic I2C2 object on pins PB10 and PB11 using the embedded-hal `BlockingI2c` trait.
+    pub fn i2c4<M: Into<Mode>>(i2c: I2c4, pins: PINS, mode: M, clocks: &Clocks) -> Self
+    where
+        PINS: Pins<I2c4>,
+    {
+        I2c::<I2c4, _>::new(i2c, pins, mode, clocks)
     }
 }
 

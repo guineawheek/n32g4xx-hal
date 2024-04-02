@@ -1,19 +1,19 @@
 //! # Alternate Function I/Os
 
-use crate::pac::{afio, AFIO, RCC};
+use crate::pac::{afio, Afio, Rcc};
 
 use crate::rcc::{Enable, Reset};
 
 
 pub trait AfioExt {
-    fn constrain(self) -> AFIO;
+    fn constrain(self) -> Afio;
 }
 #[cfg(any(feature="n32g451",feature="n32g452",feature="n32g455",feature="n32g457",feature="n32g4fr"))]
-impl AfioExt for AFIO {
-    fn constrain(self) -> AFIO {
-        let rcc = unsafe { &(*RCC::ptr()) };
-        AFIO::enable(rcc);
-        AFIO::reset(rcc);
+impl AfioExt for Afio {
+    fn constrain(self) -> Afio {
+        let rcc = unsafe { &(*Rcc::ptr()) };
+        Afio::enable(rcc);
+        Afio::reset(rcc);
         self
         // Parts {
         //     ectrl: ECTRL { _0: () },
@@ -30,11 +30,11 @@ impl AfioExt for AFIO {
 }
 
 #[cfg(any(feature="n32g432",feature="n32g435"))]
-impl AfioExt for AFIO {
+impl AfioExt for Afio {
     fn constrain(self) -> Parts {
-        let rcc = unsafe { &(*RCC::ptr()) };
-        AFIO::enable(rcc);
-        AFIO::reset(rcc);
+        let rcc = unsafe { &(*Rcc::ptr()) };
+        Afio::enable(rcc);
+        Afio::reset(rcc);
 
         Parts {
             ectrl: ECTRL { _0: () },
@@ -48,11 +48,11 @@ impl AfioExt for AFIO {
 
 
 #[cfg(any(feature="n32g401",feature="n32g430"))]
-impl AfioExt for AFIO {
+impl AfioExt for Afio {
     fn constrain(self) -> Parts {
-        let rcc = unsafe { &(*RCC::ptr()) };
-        AFIO::enable(rcc);
-        AFIO::reset(rcc);
+        let rcc = unsafe { &(*Rcc::ptr()) };
+        Afio::enable(rcc);
+        Afio::reset(rcc);
 
         Parts {
             ectrl: ECTRL { _0: () },
@@ -70,15 +70,15 @@ impl AfioExt for AFIO {
     }
 }
 
-/// HAL wrapper around the AFIO registers
+/// HAL wrapper around the Afio registers
 ///
-/// Aquired by calling [constrain](trait.AfioExt.html#constrain) on the [AFIO
-/// registers](../pac/struct.AFIO.html)
+/// Aquired by calling [constrain](trait.AfioExt.html#constrain) on the [Afio
+/// registers](../pac/struct.Afio.html)
 ///
 /// ```rust
 /// let p = pac::Peripherals::take().unwrap();
-/// let mut rcc = p.RCC.constrain();
-/// let mut afio = p.AFIO.constrain();
+/// let mut rcc = p.Rcc.constrain();
+/// let mut afio = p.Afio.constrain();
 /// 
 #[cfg(any(feature="n32g451",feature="n32g452",feature="n32g455",feature="n32g457",feature="n32g4fr"))]
 pub struct Parts {
@@ -99,8 +99,8 @@ pub struct ECTRL {
 }
 #[cfg(any(feature="n32g451",feature="n32g452",feature="n32g455",feature="n32g457",feature="n32g4fr"))]
 impl ECTRL {
-    pub fn ec(&mut self) -> &afio::ECTRL {
-        unsafe { &(*AFIO::ptr()).ectrl() }
+    pub fn ec(&mut self) -> &afio::Ectrl {
+        unsafe { &(*Afio::ptr()).ectrl() }
     }
 }
 
@@ -141,8 +141,8 @@ pub enum DebugState {
 ///
 /// ```rust
 /// let dp = pac::Peripherals::take().unwrap();
-/// let mut rcc = dp.RCC.constrain();
-/// let mut afio = dp.AFIO.constrain();
+/// let mut rcc = dp.Rcc.constrain();
+/// let mut afio = dp.Afio.constrain();
 /// function_using_mapr(&mut afio.mapr);
 /// ```
 
@@ -151,8 +151,8 @@ pub struct EXTI_CFG1 {
 }
 
 impl EXTI_CFG1 {
-    pub fn exti_cfg1(&mut self) -> &afio::EXTI_CFG1 {
-        unsafe { &(*AFIO::ptr()).exti_cfg1() }
+    pub fn exti_cfg1(&mut self) -> &afio::ExtiCfg1 {
+        unsafe { &(*Afio::ptr()).exti_cfg1() }
     }
 }
 
@@ -161,8 +161,8 @@ pub struct EXTI_CFG2 {
 }
 
 impl EXTI_CFG2 {
-    pub fn exti_cfg2(&mut self) -> &afio::EXTI_CFG2 {
-        unsafe { &(*AFIO::ptr()).exti_cfg2() }
+    pub fn exti_cfg2(&mut self) -> &afio::ExtiCfg2 {
+        unsafe { &(*Afio::ptr()).exti_cfg2() }
     }
 }
 
@@ -171,8 +171,8 @@ pub struct EXTI_CFG3 {
 }
 
 impl EXTI_CFG3 {
-    pub fn exti_cfg3(&mut self) -> &afio::EXTI_CFG3 {
-        unsafe { &(*AFIO::ptr()).exti_cfg3() }
+    pub fn exti_cfg3(&mut self) -> &afio::ExtiCfg3 {
+        unsafe { &(*Afio::ptr()).exti_cfg3() }
     }
 }
 
@@ -181,8 +181,8 @@ pub struct EXTI_CFG4 {
 }
 
 impl EXTI_CFG4 {
-    pub fn exti_cfg3(&mut self) -> &afio::EXTI_CFG4 {
-        unsafe { &(*AFIO::ptr()).exti_cfg4() }
+    pub fn exti_cfg3(&mut self) -> &afio::ExtiCfg4 {
+        unsafe { &(*Afio::ptr()).exti_cfg4() }
     }
 }
 
@@ -191,8 +191,8 @@ pub struct RMP_CFG {
 }
 
 impl RMP_CFG {
-    pub fn rmp_cfg(&mut self) -> &afio::RMP_CFG {
-        unsafe { &(*AFIO::ptr()).rmp_cfg() }
+    pub fn rmp_cfg(&mut self) -> &afio::RmpCfg {
+        unsafe { &(*Afio::ptr()).rmp_cfg() }
     }
 }
 
@@ -202,8 +202,8 @@ pub struct RMP_CFG3 {
 }
 #[cfg(any(feature="n32g451",feature="n32g452",feature="n32g455",feature="n32g457",feature="n32g4fr"))]
 impl RMP_CFG3 {
-    pub fn rmp_cfg3(&mut self) -> &afio::RMP_CFG3 {
-        unsafe { &(*AFIO::ptr()).rmp_cfg3() }
+    pub fn rmp_cfg3(&mut self) -> &afio::RmpCfg3 {
+        unsafe { &(*Afio::ptr()).rmp_cfg3() }
     }
 }
 
@@ -213,8 +213,8 @@ pub struct RMP_CFG4 {
 }
 #[cfg(any(feature="n32g451",feature="n32g452",feature="n32g455",feature="n32g457",feature="n32g4fr"))]
 impl RMP_CFG4 {
-    pub fn rmp_cfg4(&mut self) -> &afio::RMP_CFG4 {
-        unsafe { &(*AFIO::ptr()).rmp_cfg4() }
+    pub fn rmp_cfg4(&mut self) -> &afio::RmpCfg4 {
+        unsafe { &(*Afio::ptr()).rmp_cfg4() }
     }
 }
 
@@ -224,8 +224,8 @@ pub struct RMP_CFG5 {
 }
 #[cfg(any(feature="n32g451",feature="n32g452",feature="n32g455",feature="n32g457",feature="n32g4fr"))]
 impl RMP_CFG5 {
-    pub fn rmp_cfg5(&mut self) -> &afio::RMP_CFG5 {
-        unsafe { &(*AFIO::ptr()).rmp_cfg5() }
+    pub fn rmp_cfg5(&mut self) -> &afio::RmpCfg5 {
+        unsafe { &(*Afio::ptr()).rmp_cfg5() }
     }
 }
 
@@ -237,7 +237,7 @@ pub struct TOL5V_CFG {
 #[cfg(any(feature="n32g401",feature="n32g430"))]
 impl TOL5V_CFG {
     pub fn tol5v_cfg(&mut self) -> &afio::TOL5V_CFG {
-        unsafe { &(*AFIO::ptr()).tol5v_cfg() }
+        unsafe { &(*Afio::ptr()).tol5v_cfg() }
     }
 }
 
@@ -249,7 +249,7 @@ pub struct EFT_CFG1 {
 #[cfg(any(feature="n32g401",feature="n32g430"))]
 impl EFT_CFG1 {
     pub fn eft_cfg1(&mut self) -> &afio::EFT_CFG1 {
-        unsafe { &(*AFIO::ptr()).eft_cfg1() }
+        unsafe { &(*Afio::ptr()).eft_cfg1() }
     }
 }
 
@@ -261,7 +261,7 @@ pub struct EFT_CFG2 {
 #[cfg(any(feature="n32g401",feature="n32g430"))]
 impl EFT_CFG2 {
     pub fn eft_cfg2(&mut self) -> &afio::EFT_CFG2 {
-        unsafe { &(*AFIO::ptr()).eft_cfg2() }
+        unsafe { &(*Afio::ptr()).eft_cfg2() }
     }
 }
 
@@ -273,7 +273,7 @@ pub struct FILT_CFG {
 #[cfg(any(feature="n32g401",feature="n32g430"))]
 impl FILT_CFG {
     pub fn filt_cfg(&mut self) -> &afio::FILT_CFG {
-        unsafe { &(*AFIO::ptr()).filt_cfg() }
+        unsafe { &(*Afio::ptr()).filt_cfg() }
     }
 }
 
@@ -285,7 +285,7 @@ pub struct DIGEFT_CFG1 {
 #[cfg(any(feature="n32g401",feature="n32g430"))]
 impl DIGEFT_CFG1 {
     pub fn digeft_cfg1(&mut self) -> &afio::DIGEFT_CFG1 {
-        unsafe { &(*AFIO::ptr()).digeft_cfg1() }
+        unsafe { &(*Afio::ptr()).digeft_cfg1() }
     }
 }
 
@@ -297,6 +297,6 @@ pub struct DIGEFT_CFG2 {
 #[cfg(any(feature="n32g401",feature="n32g430"))]
 impl DIGEFT_CFG2 {
     pub fn digeft_cfg2(&mut self) -> &afio::DIGEFT_CFG2 {
-        unsafe { &(*AFIO::ptr()).digeft_cfg2() }
+        unsafe { &(*Afio::ptr()).digeft_cfg2() }
     }
 }

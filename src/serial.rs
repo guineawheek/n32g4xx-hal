@@ -199,7 +199,7 @@ pub trait SerialExt: Sized + Instance {
         pins: (TX,RX),
         config: impl Into<config::Config>,
         clocks: &Clocks,
-        afio: &mut crate::pac::AFIO,
+        afio: &mut crate::pac::Afio,
     ) -> Result<Serial<Self, WORD>, config::InvalidConfig>;
 
     fn tx<WORD,RMP : Remap,TX: crate::gpio::alt::altmap::RemapIO<Self,RMP> + Into<Self::Tx<PushPull>>>(
@@ -207,7 +207,7 @@ pub trait SerialExt: Sized + Instance {
         tx_pin: TX,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-        afio: &mut crate::pac::AFIO,
+        afio: &mut crate::pac::Afio,
     ) -> Result<Tx<Self, WORD>, config::InvalidConfig>
     where NoPin<Input>: Into<Self::Rx<Floating>>;
 
@@ -216,7 +216,7 @@ pub trait SerialExt: Sized + Instance {
         rx_pin: RX,
         config: impl Into<config::Config>,
         clocks: &Clocks,
-        afio: &mut crate::pac::AFIO,
+        afio: &mut crate::pac::Afio,
     ) -> Result<Rx<Self, WORD>, config::InvalidConfig>
     where NoPin<PushPull>: Into<Self::Tx<PushPull>>;
 }
@@ -227,7 +227,7 @@ impl<USART: Instance, WORD> Serial<USART, WORD> {
         pins: (impl Into<USART::Tx<PushPull>>, impl Into<USART::Rx<Floating>>),
         config: impl Into<config::Config>,
         clocks: &Clocks,
-        _afio: &mut crate::pac::AFIO
+        _afio: &mut crate::pac::Afio
 
     ) -> Result<Self, config::InvalidConfig>
     where
@@ -262,15 +262,15 @@ macro_rules! halUsart {
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
-                use crate::pac::$USARTMOD::ctrl2::STPB_A;
+                use crate::pac::$USARTMOD::ctrl2::Stpb;
                 use config::StopBits;
 
                 self.ctrl2().modify(|_,w| {
                     w.stpb().variant(match bits {
-                        StopBits::STOP0P5 => STPB_A::STOP0P5,
-                        StopBits::STOP1 => STPB_A::STOP1,
-                        StopBits::STOP1P5 => STPB_A::STOP1P5,
-                        StopBits::STOP2 => STPB_A::STOP2,
+                        StopBits::STOP0P5 => Stpb::Stop0p5,
+                        StopBits::STOP1 => Stpb::Stop1,
+                        StopBits::STOP1P5 => Stpb::Stop1p5,
+                        StopBits::STOP2 => Stpb::Stop2,
                     })
                 });
             }
@@ -292,15 +292,15 @@ macro_rules! halUart {
             }
 
             fn set_stopbits(&self, bits: config::StopBits) {
-                use crate::pac::$USARTMOD::ctrl2::STPB_A;
+                use crate::pac::$USARTMOD::ctrl2::Stpb;
                 use config::StopBits;
 
                 self.ctrl2().modify(|_,w| {
                     w.stpb().variant(match bits {
-                        StopBits::STOP0P5 => STPB_A::STOP0P5,
-                        StopBits::STOP1 => STPB_A::STOP1,
-                        StopBits::STOP1P5 => STPB_A::STOP1P5,
-                        StopBits::STOP2 => STPB_A::STOP2,
+                        StopBits::STOP0P5 => Stpb::Stop0p5,
+                        StopBits::STOP1 => Stpb::Stop1,
+                        StopBits::STOP1P5 => Stpb::Stop1p5,
+                        StopBits::STOP2 => Stpb::Stop2,
                     })
                 });
             }
@@ -309,13 +309,13 @@ macro_rules! halUart {
 }
 
 
-halUsart! { pac::USART1, usart1, Serial1, Rx1, Tx1 }
-halUsart! { pac::USART2, usart1, Serial2, Rx2, Tx2 }
-halUsart! { pac::USART3, usart1, Serial3, Rx3, Tx3 }
-halUart! { pac::UART4, uart4, Serial4, Rx4, Tx4 }
-halUart! { pac::UART5, uart4, Serial5, Rx5, Tx5 }
-halUart! { pac::UART6, uart4, Serial6, Rx6, Tx6 }
-halUart! { pac::UART7, uart4, Serial7, Rx7, Tx7 }
+halUsart! { pac::Usart1, usart1, Serial1, Rx1, Tx1 }
+halUsart! { pac::Usart2, usart1, Serial2, Rx2, Tx2 }
+halUsart! { pac::Usart3, usart1, Serial3, Rx3, Tx3 }
+halUart! { pac::Uart4, uart4, Serial4, Rx4, Tx4 }
+halUart! { pac::Uart5, uart4, Serial5, Rx5, Tx5 }
+halUart! { pac::Uart6, uart4, Serial6, Rx6, Tx6 }
+halUart! { pac::Uart7, uart4, Serial7, Rx7, Tx7 }
 
 impl<UART: CommonPins> Rx<UART, u8> {
     pub(crate) fn with_u16_data(self) -> Rx<UART, u16> {
@@ -604,33 +604,33 @@ macro_rules! serialdma {
         )+
     }
 }
-use crate::pac::{USART1,USART2,USART3,UART4,UART5,UART6,UART7};
+use crate::pac::{Usart1,Usart2,Usart3,Uart4,Uart5,Uart6,Uart7};
 serialdma! {
-    USART1: (
+    Usart1: (
         RxDma1,
         TxDma1,
     ),
-    USART2: (
+    Usart2: (
         RxDma2,
         TxDma2,
     ),
-    USART3: (
+    Usart3: (
         RxDma3,
         TxDma3,
     ),
-    UART4: (
+    Uart4: (
         RxDma4,
         TxDma4,
     ),
-    UART5: (
+    Uart5: (
         RxDma5,
         TxDma5,
     ),
-    UART6: (
+    Uart6: (
         RxDma6,
         TxDma6,
     ),
-    UART7: (
+    Uart7: (
         RxDma7,
         TxDma7,
     ),

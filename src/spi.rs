@@ -223,9 +223,9 @@ macro_rules! spi {
     };
 }
 
-spi! { pac::SPI1: Spi1, SpiSlave1 }
-spi! { pac::SPI2: Spi2, SpiSlave2 }
-spi! { pac::SPI3: Spi3, SpiSlave3 }
+spi! { pac::Spi1: Spi1, SpiSlave1 }
+spi! { pac::Spi2: Spi2, SpiSlave2 }
+spi! { pac::Spi3: Spi3, SpiSlave3 }
 
 
 pub trait SpiExt: Sized + Instance {
@@ -238,7 +238,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-        afio: &mut pac::AFIO,
+        afio: &mut pac::Afio,
     ) -> Spi<Self, {TransferMode::TransferModeNormal}, u8>;
 
     fn spi_bidi<RMP : Remap,
@@ -249,7 +249,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-        afio: &mut pac::AFIO,
+        afio: &mut pac::Afio,
     ) -> Spi<Self, {TransferMode::TransferModeBidirectional}, u8>
     where
         NoPin: Into<Self::Miso>;
@@ -262,7 +262,7 @@ pub trait SpiExt: Sized + Instance {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-        afio: &mut pac::AFIO,
+        afio: &mut pac::Afio,
     ) -> Spi<Self, {TransferMode::TransferModeRecieveOnly}, u8>
     where
         NoPin: Into<Self::Mosi>;
@@ -309,7 +309,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-        afio: &mut pac::AFIO,
+        afio: &mut pac::Afio,
     ) -> Spi<Self, {TransferMode::TransferModeNormal}, u8> {
         RMP::remap(afio);
         Spi::new(self, pins, mode, freq, clocks)
@@ -327,7 +327,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-        afio: &mut pac::AFIO,
+        afio: &mut pac::Afio,
     ) -> Spi<Self, {TransferMode::TransferModeBidirectional}, u8>
     where
         NoPin: Into<Self::Miso>,
@@ -349,7 +349,7 @@ impl<SPI: Instance> SpiExt for SPI {
         mode: impl Into<Mode>,
         freq: Hertz,
         clocks: &Clocks,
-        afio: &mut pac::AFIO,
+        afio: &mut pac::Afio,
 
     ) -> Spi<Self, {TransferMode::TransferModeRecieveOnly}, u8>
     where
@@ -824,13 +824,13 @@ impl<SPI: Instance> Inner<SPI> {
     fn read_data_reg<W: FrameSize>(&mut self) -> W {
         // NOTE(read_volatile) read only 1 byte (the svd2rust API only allows
         // reading a half-word)
-        unsafe { (*(self.spi.dat() as *const pac::spi1::DAT).cast::<vcell::VolatileCell<W>>()).get() }
+        unsafe { (*(self.spi.dat() as *const pac::spi1::Dat).cast::<vcell::VolatileCell<W>>()).get() }
     }
 
     fn write_data_reg<W: FrameSize>(&mut self, data: W) {
         // NOTE(write_volatile) see note above
         unsafe {
-            (*(self.spi.dat() as *const pac::spi1::DAT).cast::<vcell::VolatileCell<W>>()).set(data)
+            (*(self.spi.dat() as *const pac::spi1::Dat).cast::<vcell::VolatileCell<W>>()).set(data)
         }
     }
 
@@ -1461,19 +1461,19 @@ macro_rules! spi_dma {
 }
 
 spi_dma!(
-    pac::SPI1,
+    pac::Spi1,
     Spi1RxDma,
     Spi1TxDma,
     Spi1RxTxDma
 );
 spi_dma!(
-    pac::SPI2,
+    pac::Spi2,
     Spi2RxDma,
     Spi2TxDma,
     Spi2RxTxDma
 );
 spi_dma!(
-    pac::SPI3,
+    pac::Spi3,
     Spi3RxDma,
     Spi3TxDma,
     Spi3RxTxDma

@@ -118,9 +118,9 @@ pub trait DMAChannel {
     fn in_progress(&self) -> bool;
     fn listen(&mut self, event: Event);
     fn unlisten(&mut self, event: Event);
-    fn st(&mut self) -> &crate::pac::dma1::ST;
-    fn intsts(&self) -> n32g4::raw::R<crate::pac::dma1::intsts::INTSTS_SPEC>;
-    fn intclr(&self) -> &crate::pac::dma1::INTCLR;
+    fn st(&mut self) -> &crate::pac::dma1::St;
+    fn intsts(&self) -> n32g4::raw::R<crate::pac::dma1::intsts::IntstsSpec>;
+    fn intclr(&self) -> &crate::pac::dma1::Intclr;
     fn get_txnum(&self) -> u32;
 }
 
@@ -288,7 +288,7 @@ macro_rules! dma {
             pub mod $dmaX {
                 use core::convert::TryFrom;
 
-                use crate::pac::{RCC, $DMAX, dma1};
+                use crate::pac::{Rcc, $DMAX, dma1};
 
                 use crate::dma::{CircBuffer, DMAChannel, DmaExt, Error, Event, Half, RxDma, TransferPayload};
                 use crate::rcc::Enable;
@@ -362,16 +362,16 @@ macro_rules! dma {
                             }
                         }
 
-                        fn st(&mut self) -> &dma1::ST {
+                        fn st(&mut self) -> &dma1::St {
                             unsafe { &(*$DMAX::ptr()).$chX() }
                         }
 
-                        fn intsts(&self) -> n32g4::raw::R<dma1::intsts::INTSTS_SPEC> {
+                        fn intsts(&self) -> n32g4::raw::R<dma1::intsts::IntstsSpec> {
                             // NOTE(unsafe) atomic read with no side effects
                             unsafe { (*$DMAX::ptr()).intsts().read() }
                         }
 
-                        fn intclr(&self) -> &dma1::INTCLR {
+                        fn intclr(&self) -> &dma1::Intclr {
                             unsafe { &(*$DMAX::ptr()).intclr() }
                         }
 
@@ -464,7 +464,7 @@ macro_rules! dma {
                     type Channels = Channels;
 
                     fn split(self) -> Channels {
-                        let rcc = unsafe { &(*RCC::ptr()) };
+                        let rcc = unsafe { &(*Rcc::ptr()) };
                         $DMAX::enable(rcc);
                         unsafe { (*$DMAX::ptr()).chmapen().modify(|_,w| w.map_en().set_bit()); }
                         // reset the DMA control registers (stops all on-going transfers)
@@ -481,7 +481,7 @@ macro_rules! dma {
 }
 
 dma! {
-    DMA1: (dma1, {
+    Dma1: (dma1, {
         C1: (
             st1,
             htxf1, txcf1,
@@ -524,7 +524,7 @@ dma! {
         ),
     }),
 
-    DMA2: (dma2, {
+    Dma2: (dma2, {
         C1: (
             st1,
             htxf1, txcf1,

@@ -574,7 +574,7 @@ macro_rules! hal {
         )?
 
         $(impl MasterTimer for $TIM {
-            type Mms = pac::$timbase::ctrl2::MMSEL_A;
+            type Mms = pac::$timbase::ctrl2::Mmsel;
             fn master_mode(&mut self, mode: Self::Mms) {
                 self.ctrl2().modify(|_,w| w.mmsel().variant(mode));
             }
@@ -807,11 +807,11 @@ impl<TIM: Instance, const FREQ: u32> crate::ReadFlags for FTimer<TIM, FREQ> {
     }
 }
 
-hal!(pac::TIM1: [Timer1, u16, dmar: u16, c: (6, _aoe, high_ccr: (4, ccrh)), m: tim1,]);
-hal!(pac::TIM2: [Timer2, u16, dmar: u16, c: (4), m: tim2,]);
-hal!(pac::TIM3: [Timer3, u16, dmar: u16, c: (4), m: tim3,]);
-hal!(pac::TIM4: [Timer4, u16, dmar: u16, c: (4), m: tim3,]);
-hal!(pac::TIM5: [Timer5, u16, dmar: u16, c: (4), m: tim5,]);
-hal!(pac::TIM6: [Timer6, u16, m: tim6,]);
-hal!(pac::TIM7: [Timer7, u16, m: tim7,]);
-hal!(pac::TIM8: [Timer8, u16, dmar: u16, c: (6, _aoe, high_ccr: (4, ccrh)), m: tim8,]);
+hal!(pac::Tim1: [Timer1, u16, dmar: u16, c: (6, _aoe, high_ccr: (4, ccrh)), m: tim1,]);
+hal!(pac::Tim2: [Timer2, u16, dmar: u16, c: (4), m: tim2,]);
+hal!(pac::Tim3: [Timer3, u16, dmar: u16, c: (4), m: tim3,]);
+hal!(pac::Tim4: [Timer4, u16, dmar: u16, c: (4), m: tim3,]);
+hal!(pac::Tim5: [Timer5, u16, dmar: u16, c: (4), m: tim5,]);
+hal!(pac::Tim6: [Timer6, u16, m: tim6,]);
+hal!(pac::Tim7: [Timer7, u16, m: tim7,]);
+hal!(pac::Tim8: [Timer8, u16, dmar: u16, c: (6, _aoe, high_ccr: (4, ccrh)), m: tim8,]);

@@ -1,4 +1,4 @@
-use crate::pac::RCC;
+use crate::pac::Rcc;
 
 pub struct MainPll {
     pub use_pll: bool,
@@ -39,9 +39,9 @@ impl MainPll {
         } else {
             (false, pll_mul - 1)
         };
-        unsafe { &*RCC::ptr() }.cfg().write(|w| {
+        unsafe { &*Rcc::ptr() }.cfg().write(|w| {
             w.pllmulfct_h().bit(pllmulfct_h);
-            w.pllmulfct().bits(pllmulfct as u8);
+            unsafe { w.pllmulfct().bits(pllmulfct as u8); }
             w.pllhsepres().bit(use_hse && pll_presc == 2);
             w.pllsrc().bit(use_hse)
         });
