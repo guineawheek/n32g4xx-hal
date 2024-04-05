@@ -58,6 +58,7 @@ pub mod bb;
 #[cfg(any(feature = "n32g451",feature = "n32g452",feature = "n32g455",feature = "n32g457",feature = "n32g4fr"))]
 pub mod bkp;
 pub mod can;
+pub mod crc;
 pub mod dma;
 pub mod gpio;
 pub mod i2c;
