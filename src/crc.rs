@@ -45,6 +45,18 @@ impl Crc16State {
             endianness: endianness
         }
     }
+    pub fn new_le() -> Self {
+        Self {
+            value: 0,
+            endianness: CrcEndianness::StartFromLsb,
+        }
+    }
+    pub fn new_be() -> Self {
+        Self {
+            value: 0,
+            endianness: CrcEndianness::StartFromMsb,
+        }
+    }
 }
 
 impl CrcExt for Crc {
