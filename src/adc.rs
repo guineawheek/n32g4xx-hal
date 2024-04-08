@@ -321,13 +321,13 @@ pub mod config {
     #[repr(u8)]
     pub enum Resolution {
         /// 12-bit
-        Twelve = 0,
+        Twelve = 3,
         /// 10-bit
-        Ten = 1,
+        Ten = 2,
         /// 8-bit
-        Eight = 2,
+        Eight = 1,
         /// 6-bit
-        Six = 3,
+        Six = 0,
     }
     impl From<Resolution> for u8 {
         fn from(r: Resolution) -> u8 {
@@ -631,7 +631,7 @@ macro_rules! adc {
 
                     self.set_continuous(config.continuous);
                     self.set_dma(config.dma);
-                    self.set_end_of_conversion_interrupt(config.end_of_conversion_interrupt);
+                    self.set_end_of_regular_conversion_interrupt(config.end_of_conversion_interrupt);
                     self.set_default_sample_time(config.default_sample_time);
                 }
 
@@ -643,6 +643,22 @@ macro_rules! adc {
                 /// Enables the adc
                 pub fn enable(&mut self) {
                     self.adc_reg.ctrl2().modify(|_, w| w.on().set_bit());
+                }
+                
+                /// Calibrates the adc
+                pub fn calibrate(&mut self) {
+                    self.adc_reg.ctrl2().modify(|_,w| w.encal().set_bit());
+                    while self.adc_reg.ctrl2().read().encal().bit_is_set() {}
+                }
+
+                /// Enable Vref/Temp channels in the adc
+                pub fn enable_vref_temp(&mut self) {
+                    self.adc_reg.ctrl2().modify(|_,w| w.tempen().set_bit());
+                }
+
+                /// Enable Vref/Temp channels in the adc
+                pub fn set_synchronous_injection_mode(&mut self) {
+                    unsafe { self.adc_reg.ctrl1().modify(|_,w| w.dusel().bits(0b0101)) };
                 }
 
                 /// Disables the adc
@@ -726,7 +742,7 @@ macro_rules! adc {
 
                 /// Sets if the end-of-conversion behaviour.
                 /// The end-of-conversion interrupt occur either per conversion or for the whole sequence.
-                pub fn set_end_of_conversion_interrupt(&mut self, eoc: config::Eoc) {
+                pub fn set_end_of_regular_conversion_interrupt(&mut self, eoc: config::Eoc) {
                     self.config.end_of_conversion_interrupt = eoc;
                     let (en_ch, en_seq) = match eoc {
                         config::Eoc::Disabled => (false, false),
@@ -735,6 +751,19 @@ macro_rules! adc {
                     };
                     self.adc_reg.ctrl1().modify(|_, w| w.endien().bit(en_seq));
                     self.adc_reg.ctrl3().modify(|_, w| w.endcaien().bit(en_ch));
+                }
+
+                /// Sets if the end-of-conversion behaviour.
+                /// The end-of-conversion interrupt occur either per conversion or for the whole sequence.
+                pub fn set_end_of_injected_conversion_interrupt(&mut self, eoc: config::Eoc) {
+                    self.config.end_of_conversion_interrupt = eoc;
+                    let (en_ch, en_seq) = match eoc {
+                        config::Eoc::Disabled => (false, false),
+                        config::Eoc::Conversion => (true, false),
+                        config::Eoc::Sequence => (false, true),
+                    };
+                    self.adc_reg.ctrl1().modify(|_, w| w.jendcien().bit(en_seq));
+                    self.adc_reg.ctrl3().modify(|_, w| w.jendcaien().bit(en_ch));
                 }
 
                 /// Resets the end-of-conversion flag
@@ -853,10 +882,10 @@ macro_rules! adc {
                     CHANNEL: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>
                 {
                     //Check the sequence is long enough
-                    self.adc_reg.rseq1().modify(|r, w| {
-                        let prev: config::InjectedSequence = r.len().bits().into();
+                    self.adc_reg.jseq().modify(|r, w| {
+                        let prev: config::InjectedSequence = r.jlen().bits().into();
                         if prev < sequence {
-                            unsafe { w.len().bits(sequence.into()) }
+                            unsafe { w.jlen().bits(sequence.into()) }
                         } else {
                             w
                         }
@@ -866,10 +895,10 @@ macro_rules! adc {
 
                     //Set the channel in the right sequence field
                     match sequence {
-                        config::InjectedSequence::One      => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq1().bits(channel) }),
-                        config::InjectedSequence::Two      => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq2().bits(channel) }),
-                        config::InjectedSequence::Three    => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq3().bits(channel) }),
-                        config::InjectedSequence::Four     => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq4().bits(channel) }),
+                        config::InjectedSequence::One      => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq4().bits(channel) }),
+                        config::InjectedSequence::Two      => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq3().bits(channel) }),
+                        config::InjectedSequence::Three    => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq2().bits(channel) }),
+                        config::InjectedSequence::Four     => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq1().bits(channel) }),
                     }
 
                     //Set the sample time for the channel
@@ -926,33 +955,29 @@ macro_rules! adc {
                 }
 
                 /// Returns the current injected sample stored in the ADC data register
-                pub fn set_injected_offset(&self, seq : config::InjectedSequence, offset : i16) {
+                pub fn set_injected_offset(&self, seq : config::InjectedSequence, offset : u16) {
                     match seq {
-                        config::InjectedSequence::One      => self.adc_reg.joffset1().modify(|_,w| unsafe { w.offsetjch1().bits(offset as u16) }),
-                        config::InjectedSequence::Two      => self.adc_reg.joffset2().modify(|_,w| unsafe { w.offsetjch2().bits(offset as u16) }),
-                        config::InjectedSequence::Three    => self.adc_reg.joffset3().modify(|_,w| unsafe { w.offsetjch3().bits(offset as u16) }),
-                        config::InjectedSequence::Four     => self.adc_reg.joffset4().modify(|_,w| unsafe { w.offsetjch4().bits(offset as u16) }),
+                        config::InjectedSequence::One      => self.adc_reg.joffset1().modify(|_,w| unsafe { w.offsetjch1().bits(offset) }),
+                        config::InjectedSequence::Two      => self.adc_reg.joffset2().modify(|_,w| unsafe { w.offsetjch2().bits(offset) }),
+                        config::InjectedSequence::Three    => self.adc_reg.joffset3().modify(|_,w| unsafe { w.offsetjch3().bits(offset) }),
+                        config::InjectedSequence::Four     => self.adc_reg.joffset4().modify(|_,w| unsafe { w.offsetjch4().bits(offset) }),
                     }
                 }
 
                 /// Returns the current injected sample stored in the ADC data register
-                pub fn shift_injected_offset(&self, seq : config::InjectedSequence, offset : i16) {
+                pub fn shift_injected_offset(&self, seq : config::InjectedSequence, offset : u16) {
                     match seq {
-                        config::InjectedSequence::One      => self.adc_reg.joffset1().modify(|r,w| unsafe {  
-                            let cur_offset = ((r.offsetjch1().bits() as i16) << 4) >> 4;
-                            w.offsetjch1().bits((cur_offset + offset) as u16) 
+                        config::InjectedSequence::One => self.adc_reg.joffset1().modify(|r,w| unsafe {  
+                            w.offsetjch1().bits(u16::wrapping_add(r.offsetjch1().bits() , offset)) 
                         }),
-                        config::InjectedSequence::Two      => self.adc_reg.joffset2().modify(|r,w| unsafe {  
-                            let cur_offset = ((r.offsetjch2().bits() as i16) << 4) >> 4;
-                            w.offsetjch2().bits((cur_offset + offset) as u16) 
+                        config::InjectedSequence::Two => self.adc_reg.joffset2().modify(|r,w| unsafe {  
+                            w.offsetjch2().bits(u16::wrapping_add(r.offsetjch2().bits() , offset)) 
                         }),
-                        config::InjectedSequence::Three    => self.adc_reg.joffset3().modify(|r,w| unsafe {  
-                            let cur_offset = ((r.offsetjch3().bits() as i16) << 4) >> 4;
-                            w.offsetjch3().bits((cur_offset + offset) as u16) 
+                        config::InjectedSequence::Three => self.adc_reg.joffset3().modify(|r,w| unsafe {  
+                            w.offsetjch3().bits(u16::wrapping_add(r.offsetjch3().bits() , offset)) 
                         }),
-                        config::InjectedSequence::Four     => self.adc_reg.joffset4().modify(|r,w| unsafe {  
-                            let cur_offset = ((r.offsetjch4().bits() as i16) << 4) >> 4;
-                            w.offsetjch4().bits((cur_offset + offset) as u16) 
+                        config::InjectedSequence::Four => self.adc_reg.joffset4().modify(|r,w| unsafe {  
+                            w.offsetjch4().bits(u16::wrapping_add(r.offsetjch4().bits() , offset)) 
                         }),
                     }
                 }

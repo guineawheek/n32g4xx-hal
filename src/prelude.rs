@@ -40,11 +40,8 @@ pub use crate::time::U32Ext as _n32g4xx_hal_time_U32Ext;
 pub use crate::timer::MonoTimer64Ext as _;
 #[cfg(feature = "rtic1")]
 pub use crate::timer::MonoTimerExt as _;
-pub use crate::timer::PwmExt as _n32g4xx_hal_timer_PwmExt;
 #[cfg(feature = "rtic1")]
 pub use crate::timer::SysMonoTimerExt as _n32g4xx_hal_timer_SysMonoTimerExt;
-pub use crate::timer::SysTimerExt as _n32g4xx_hal_timer_SysCounterExt;
-pub use crate::timer::TimerExt as _n32g4xx_hal_timer_TimerExt;
 
 pub use crate::ClearFlags as _;
 pub use crate::Listen as _;
