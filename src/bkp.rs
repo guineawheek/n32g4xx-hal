@@ -38,25 +38,25 @@ macro_rules! read_datax {
 impl BackupDomain {
     /// Read a 16-bit value from one of the DR1 to DR10 registers part of the
     /// Backup Data Register. The register argument is a zero based index to the
-    /// DRx registers: 0 is DR1, up to 9 for DR10. Providing a number above 9
+    /// DRx registers: 0 is DR1, up to 41 for DR42. Providing a number above 41
     /// will panic.
     pub fn read_data_register(&self, register: usize) -> u16 {
         if register < 10 {
             read_datax!(self, datl, register)
         } else {
-            read_datax!(self, dath, register)
+            read_datax!(self, dath, register-10)
         }
     }
 
     /// Write a 16-bit value to one of the DR1 to DR10 registers part of the
     /// Backup Data Register. The register argument is a zero based index to the
-    /// DRx registers: 0 is DR1, up to 9 for DR10. Providing a number above 9
+    /// DRx registers: 0 is DR1, up to 41 for DR42. Providing a number above 41
     /// will panic.
     pub fn write_data_register_low(&self, register: usize, data: u16) {
         if register < 10 {
             write_datax!(self, datl, register, data)
         } else {
-            write_datax!(self, dath, register, data)
+            write_datax!(self, dath, register-10, data)
         }
     }
 }
