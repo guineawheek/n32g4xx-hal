@@ -13,7 +13,9 @@
   Only the RTC functionality is currently implemented.
 */
 
-use crate::pac::Bkp;
+use n32g4::n32g455::Rcc;
+
+use crate::{pac::Bkp, rcc::{Enable, Reset}};
 
 /**
   The existence of this struct indicates that writing to the the backup
@@ -58,5 +60,18 @@ impl BackupDomain {
         } else {
             write_datax!(self, dath, register-10, data)
         }
+    }
+}
+
+pub trait BkpExt {
+    fn constrain(self, pwr: &mut crate::pac::Pwr) -> BackupDomain;
+}
+
+impl BkpExt for Bkp {
+    fn constrain(self, pwr: &mut crate::pac::Pwr) -> BackupDomain {
+        let rcc = {unsafe {&(*Rcc::ptr())}};
+        Bkp::enable(rcc);
+        pwr.pwr_ctrl1().modify(|_, w| w.dbkp().set_bit());
+        BackupDomain{_regs: self}
     }
 }
