@@ -16,12 +16,20 @@ pub enum Error {
 pub enum Event {
     HalfTransfer,
     TransferComplete,
+    TransferError,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Half {
     First,
     Second,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransferDirection {
+    MemoryToMemory,
+    MemoryToPeripheral,
+    PeripheralToMemory,
 }
 
 pub struct CircBuffer<BUFFER, PAYLOAD>
@@ -109,13 +117,22 @@ pub struct R;
 /// Write transfer
 pub struct W;
 
+pub enum ChannelStatus {
+    TransferInProgress,
+    TransferComplete,
+    TransferError,
+}
+
 pub trait DMAChannel {
     fn set_peripheral_address(&mut self, address: u32, inc: bool);
     fn set_memory_address(&mut self, address: u32, inc: bool);
     fn set_transfer_length(&mut self, len: usize);
+    fn set_transfer_direction(&mut self, direction: TransferDirection);
     fn start(&mut self);
     fn stop(&mut self);
     fn in_progress(&self) -> bool;
+    fn clear_flag(&mut self, event: Event);
+    fn status(&self) -> ChannelStatus;
     fn listen(&mut self, event: Event);
     fn unlisten(&mut self, event: Event);
     fn st(&mut self) -> &crate::pac::dma1::St;
@@ -279,9 +296,11 @@ macro_rules! dma {
             $chX:ident,
             $htxfX:ident,
             $txcfX:ident,
+            $errfX:ident,
             $chtxfX:ident,
             $ctxcfX:ident,
-            $cglbfX:ident
+            $cglbfX:ident,
+            $cerrfX:ident
         ),)+
     }),)+) => {
         $(
@@ -310,6 +329,44 @@ macro_rules! dma {
                             self.st().paddr().write(|w| unsafe { w.addr().bits(address) } );
                             self.st().chcfg().modify(|_, w| w.pinc().bit(inc) );
                         }
+
+                        fn clear_flag(&mut self, event : crate::dma::Event) { 
+                            match event {
+                                crate::dma::Event::HalfTransfer => {
+                                    self.intclr().modify(|_,w| w.$chtxfX().clear_bit())
+                                },
+                                crate::dma::Event::TransferComplete => {
+                                    self.intclr().modify(|_,w| w.$ctxcfX().clear_bit())
+                                },
+                                crate::dma::Event::TransferError => {
+                                    self.intclr().modify(|_,w| w.$cerrfX().clear_bit())
+                                }
+                            }
+                        }
+
+                        fn set_transfer_direction(&mut self, direction: crate::dma::TransferDirection) {
+                            match direction {
+                                crate::dma::TransferDirection::MemoryToMemory => {
+                                    self.st().chcfg().modify(|_,w| w.mem2mem().set_bit())
+                                },
+                                crate::dma::TransferDirection::MemoryToPeripheral => {
+                                    self.st().chcfg().modify(|_,w| w.mem2mem().clear_bit().dir().set_bit())
+                                },
+                                crate::dma::TransferDirection::PeripheralToMemory => {
+                                    self.st().chcfg().modify(|_,w| w.mem2mem().clear_bit().dir().clear_bit())
+                                },
+                            }
+                        }
+
+                        fn status(&self) -> crate::dma::ChannelStatus {
+                            if self.intsts().$errfX().bit_is_set() {
+                                return crate::dma::ChannelStatus::TransferError;
+                            }
+                            if self.intsts().$txcfX().bit_is_set() {
+                                return crate::dma::ChannelStatus::TransferComplete;
+                            }
+                            return crate::dma::ChannelStatus::TransferInProgress;
+                        } 
 
                         /// `address` where from/to data will be read/write
                         ///
@@ -347,6 +404,9 @@ macro_rules! dma {
                                 Event::HalfTransfer => self.st().chcfg().modify(|_, w| w.htxie().set_bit()),
                                 Event::TransferComplete => {
                                     self.st().chcfg().modify(|_, w| w.txcie().set_bit())
+                                },
+                                Event::TransferError => {
+                                    self.st().chcfg().modify(|_, w| w.errie().set_bit())
                                 }
                             }
                         }
@@ -358,6 +418,9 @@ macro_rules! dma {
                                 },
                                 Event::TransferComplete => {
                                     self.st().chcfg().modify(|_, w| w.txcie().clear_bit())
+                                },
+                                Event::TransferError => {
+                                    self.st().chcfg().modify(|_, w| w.errie().clear_bit())
                                 }
                             }
                         }
@@ -484,86 +547,86 @@ dma! {
     Dma1: (dma1, {
         C1: (
             st1,
-            htxf1, txcf1,
-            chtxf1, ctxcf1, cglbf1
+            htxf1, txcf1, errf1,
+            chtxf1, ctxcf1, cglbf1, cerrf1
         ),
         C2: (
             st2,
-            htxf2, txcf2,
-            chtxf2, ctxcf2, cglbf2
+            htxf2, txcf2, errf2,
+            chtxf2, ctxcf2, cglbf2, cerrf2
         ),
         C3: (
             st3,
-            htxf3, txcf3,
-            chtxf3, ctxcf3, cglbf3
+            htxf3, txcf3, errf3,
+            chtxf3, ctxcf3, cglbf3, cerrf3
         ),
         C4: (
             st4,
-            htxf4, txcf4,
-            chtxf4, ctxcf4, cglbf4
+            htxf4, txcf4, errf4,
+            chtxf4, ctxcf4, cglbf4, cerrf4
         ),
         C5: (
             st5,
-            htxf5, txcf5,
-            chtxf5, ctxcf5, cglbf5
+            htxf5, txcf5, errf5,
+            chtxf5, ctxcf5, cglbf5, cerrf5
         ),
         C6: (
             st6,
-            htxf6, txcf6,
-            chtxf6, ctxcf6, cglbf6
+            htxf6, txcf6, errf6,
+            chtxf6, ctxcf6, cglbf6, cerrf6
         ),
         C7: (
             st7,
-            htxf7, txcf7,
-            chtxf7, ctxcf7, cglbf7
+            htxf7, txcf7, errf7,
+            chtxf7, ctxcf7, cglbf7, cerrf7
         ),
         C8: (
             st8,
-            htxf8, txcf8,
-            chtxf8, ctxcf8, cglbf8
+            htxf8, txcf8, errf8,
+            chtxf8, ctxcf8, cglbf8, cerrf8
         ),
     }),
 
     Dma2: (dma2, {
         C1: (
             st1,
-            htxf1, txcf1,
-            chtxf1, ctxcf1, cglbf1
+            htxf1, txcf1, errf1,
+            chtxf1, ctxcf1, cglbf1, cerrf1
         ),
         C2: (
             st2,
-            htxf2, txcf2,
-            chtxf2, ctxcf2, cglbf2
+            htxf2, txcf2, errf2,
+            chtxf2, ctxcf2, cglbf2, cerrf2
         ),
         C3: (
             st3,
-            htxf3, txcf3,
-            chtxf3, ctxcf3, cglbf3
+            htxf3, txcf3, errf3,
+            chtxf3, ctxcf3, cglbf3, cerrf3
         ),
         C4: (
             st4,
-            htxf4, txcf4,
-            chtxf4, ctxcf4, cglbf4
+            htxf4, txcf4, errf4,
+            chtxf4, ctxcf4, cglbf4, cerrf4
         ),
         C5: (
             st5,
-            htxf5, txcf5,
-            chtxf5, ctxcf5, cglbf5
+            htxf5, txcf5, errf5,
+            chtxf5, ctxcf5, cglbf5, cerrf5
         ),
         C6: (
             st6,
-            htxf6, txcf6,
-            chtxf6, ctxcf6, cglbf6
+            htxf6, txcf6, errf6,
+            chtxf6, ctxcf6, cglbf6, cerrf6
         ),
         C7: (
             st7,
-            htxf7, txcf7,
-            chtxf7, ctxcf7, cglbf7
+            htxf7, txcf7, errf7,
+            chtxf7, ctxcf7, cglbf7, cerrf7
         ),
         C8: (
             st8,
-            htxf8, txcf8,
-            chtxf8, ctxcf8, cglbf8
+            htxf8, txcf8, errf8,
+            chtxf8, ctxcf8, cglbf8, cerrf8
         ),
     }),
 }

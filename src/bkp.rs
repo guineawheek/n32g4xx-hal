@@ -15,7 +15,7 @@
 
 use n32g4::n32g455::Rcc;
 
-use crate::{pac::Bkp, rcc::{Enable, Reset}};
+use crate::{pac::Bkp, rcc::Enable};
 
 /**
   The existence of this struct indicates that writing to the the backup

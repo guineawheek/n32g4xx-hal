@@ -265,8 +265,10 @@ impl<I2C: Instance,PINS> I2c<I2C,PINS> {
         match mode {
             // I2C clock control calculation
             Mode::Standard { frequency } => {
-                let ccr = (clock / (frequency.raw() * 2)).max(4);
-
+                let mut ccr = (clock / (frequency.raw() * 2)).max(4);
+                if ccr < 0x04 {
+                    ccr = 0x04
+                }
                 // Set clock to standard mode with appropriate parameters for selected speed
                 self.i2c.clkctrl().modify(|_,w| unsafe {
                     w.fsmode()
@@ -357,7 +359,7 @@ impl<I2C: Instance,PINS> I2c<I2C,PINS> {
             self.check_and_clear_error_flags()?;
 
             let sr2 = self.i2c.sts2().read();
-            if !(sr2.msmode().bit_is_clear() && sr2.busy().bit_is_clear()) {
+            if sr2.msmode().bit_is_set() && sr2.busy().bit_is_set() {
                 break;
             }
         }
@@ -379,7 +381,7 @@ impl<I2C: Instance,PINS> I2c<I2C,PINS> {
                 break;
             }
         }
-
+        self.i2c.sts1().read();
         // Clear condition by reading SR2
         self.i2c.sts2().read();
 
@@ -415,7 +417,7 @@ impl<I2C: Instance,PINS> I2c<I2C,PINS> {
                 break;
             }
         }
-
+        self.i2c.sts1().read();
         // Clear condition by reading SR2
         self.i2c.sts2().read();
 
@@ -453,7 +455,6 @@ impl<I2C: Instance,PINS> I2c<I2C,PINS> {
             .bytef()
             .bit_is_clear()
         {}
-
         Ok(())
     }
 

@@ -1,7 +1,7 @@
 //! Multi device hardware abstraction on top of the peripheral access API for the Nations Technologies N32G4 series microcontrollers.
 //!
 //! ## Feature flags
-#![doc = document_features::document_features!()]
+// #![doc = document_features::document_features!()]
 #![no_std]
 #![allow(non_camel_case_types)]
 #![feature(associated_type_defaults)]
