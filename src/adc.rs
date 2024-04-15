@@ -674,7 +674,7 @@ macro_rules! adc {
                 /// Starts conversion sequence. Waits for the hardware to indicate it's actually started.
                 pub fn start_conversion(&mut self) {
                     self.enable();
-                    self.clear_end_of_conversion_flag();
+                    self.clear_end_of_regular_conversion_flag();
                     //Start conversion
                     self.adc_reg.ctrl2().modify(|_, w| w.swstrrch().set_bit());
 
@@ -767,8 +767,13 @@ macro_rules! adc {
                 }
 
                 /// Resets the end-of-conversion flag
-                pub fn clear_end_of_conversion_flag(&mut self) {
+                pub fn clear_end_of_regular_conversion_flag(&mut self) {
                     self.adc_reg.sts().modify(|_, w| w.endca().clear_bit().endc().clear_bit());
+                }
+
+                /// Resets the end-of-conversion flag
+                pub fn clear_end_of_injected_conversion_flag(&mut self) {
+                    self.adc_reg.sts().modify(|_, w| w.jendca().clear_bit().jendc().clear_bit());
                 }
 
                 /// Sets the default sample time that is used for one-shot conversions.
@@ -881,24 +886,30 @@ macro_rules! adc {
                 where
                     CHANNEL: embedded_hal_02::adc::Channel<pac::$adc_type, ID=u8>
                 {
+                    let mut jlen = self.adc_reg.jseq().read().jlen().bits();
                     //Check the sequence is long enough
                     self.adc_reg.jseq().modify(|r, w| {
+                        let init_reg = r.bits();
                         let prev: config::InjectedSequence = r.jlen().bits().into();
                         if prev < sequence {
-                            unsafe { w.jlen().bits(sequence.into()) }
+                            let shift_cnt = (sequence as u8 - prev as u8) * 5u8;
+                            unsafe { w.bits(init_reg >> shift_cnt); }
+                            jlen = sequence as u8;
+                            unsafe { w.jlen().bits(sequence as u8) }
                         } else {
+                            jlen = sequence as u8;
                             w
                         }
                     });
 
                     let channel = CHANNEL::channel();
-
+                    let target_jseq : config::InjectedSequence = (3 - jlen + sequence as u8).into();
                     //Set the channel in the right sequence field
-                    match sequence {
-                        config::InjectedSequence::One      => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq4().bits(channel) }),
-                        config::InjectedSequence::Two      => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq3().bits(channel) }),
-                        config::InjectedSequence::Three    => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq2().bits(channel) }),
-                        config::InjectedSequence::Four     => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq1().bits(channel) }),
+                    match target_jseq {
+                        config::InjectedSequence::One      => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq1().bits(channel) }),
+                        config::InjectedSequence::Two      => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq2().bits(channel) }),
+                        config::InjectedSequence::Three    => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq3().bits(channel) }),
+                        config::InjectedSequence::Four     => self.adc_reg.jseq().modify(|_, w| unsafe {w.jseq4().bits(channel) }),
                     }
 
                     //Set the sample time for the channel
@@ -1028,7 +1039,7 @@ macro_rules! adc {
                     self.reset_regular_sequence();
                     self.configure_regular_channel(pin, config::RegularSequence::One, sample_time);
                     self.enable();
-                    self.clear_end_of_conversion_flag();
+                    self.clear_end_of_regular_conversion_flag();
                     self.start_conversion();
 
                     //Wait for the sequence to complete

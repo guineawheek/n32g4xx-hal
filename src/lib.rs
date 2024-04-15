@@ -64,6 +64,7 @@ pub mod dma;
 pub mod gpio;
 pub mod i2c;
 pub mod pwm;
+pub mod sac;
 pub mod serial;
 pub mod spi;
 pub mod rcc;
