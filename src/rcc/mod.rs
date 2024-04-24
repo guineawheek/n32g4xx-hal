@@ -178,10 +178,27 @@ where
     T: RccBus,
     T::Bus: BusTimerClock,
 {
-    fn timer_clock(clocks: &Clocks) -> Hertz {
+    default fn timer_clock(clocks: &Clocks) -> Hertz {
         T::Bus::timer_clock(clocks)
     }
 }
+
+impl BusTimerClock for crate::pac::Tim1
+where
+{
+    fn timer_clock(clocks: &Clocks) -> Hertz {
+        APB2::timer_clock(clocks) * 2
+    }
+}
+
+impl BusTimerClock for crate::pac::Tim8
+where
+{
+    fn timer_clock(clocks: &Clocks) -> Hertz {
+        APB2::timer_clock(clocks) * 2
+    }
+}
+
 
 impl BusTimerClock for APB1 {
     fn timer_clock(clocks: &Clocks) -> Hertz {
@@ -533,7 +550,7 @@ impl CFGR {
             Some(32_000_000) => (true , 0b11110),
             _ => (false, 0b00110)
         };
-        rcc.cfg2().modify(|_,w| unsafe { w.adchpres().bits(0b0001)});
+        rcc.cfg2().modify(|_,w| unsafe { w.adchpres().bits(0b0001).adcpllpres().bits(0b10001)});
         rcc.cfg3().modify(|_,w| unsafe { w.trng1msel().variant(trng_1m_sel).trng1mpres().bits(trng_1m_pres).trng1men().set_bit() });
         rcc.cfg().modify(|_,w| {
             unsafe { w.usbpres().bits(usb_pres) }

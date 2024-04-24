@@ -254,34 +254,34 @@ pub mod config {
     #[repr(u8)]
     pub enum SampleTime {
         /// 3 cycles
-        Cycles_3 = 0,
+        Cycles_1p5 = 0,
         /// 15 cycles
-        Cycles_15 = 1,
+        Cycles_7p5 = 1,
         /// 28 cycles
-        Cycles_28 = 2,
+        Cycles_13p5 = 2,
         /// 56 cycles
-        Cycles_56 = 3,
+        Cycles_28p5 = 3,
         /// 84 cycles
-        Cycles_84 = 4,
+        Cycles_41p5 = 4,
         /// 112 cycles
-        Cycles_112 = 5,
+        Cycles_55p5 = 5,
         /// 144 cycles
-        Cycles_144 = 6,
+        Cycles_71p5 = 6,
         /// 480 cycles
-        Cycles_480 = 7,
+        Cycles_239p5 = 7,
     }
 
     impl From<u8> for SampleTime {
         fn from(f: u8) -> SampleTime {
             match f {
-                0 => SampleTime::Cycles_3,
-                1 => SampleTime::Cycles_15,
-                2 => SampleTime::Cycles_28,
-                3 => SampleTime::Cycles_56,
-                4 => SampleTime::Cycles_84,
-                5 => SampleTime::Cycles_112,
-                6 => SampleTime::Cycles_144,
-                7 => SampleTime::Cycles_480,
+                0 => SampleTime::Cycles_1p5,
+                1 => SampleTime::Cycles_7p5,
+                2 => SampleTime::Cycles_13p5,
+                3 => SampleTime::Cycles_28p5,
+                4 => SampleTime::Cycles_41p5,
+                5 => SampleTime::Cycles_55p5,
+                6 => SampleTime::Cycles_71p5,
+                7 => SampleTime::Cycles_239p5,
                 _ => unimplemented!(),
             }
         }
@@ -299,21 +299,12 @@ pub mod config {
     #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     #[repr(u8)]
     pub enum Clock {
-        /// PCLK2 (APB2) divided by 2
-        Pclk2_div_2 = 0,
-        /// PCLK2 (APB2) divided by 4
-        Pclk2_div_4 = 1,
-        /// PCLK2 (APB2) divided by 6
-        Pclk2_div_6 = 2,
-        /// PCLK2 (APB2) divided by 8
-        Pclk2_div_8 = 3,
+        /// HCLK referenced Adc Clock
+        Hclk = 0, 
+        /// Pll referenced Adc Clock
+        PllClk = 1, 
     }
 
-    impl From<Clock> for u8 {
-        fn from(c: Clock) -> u8 {
-            c as _
-        }
-    }
 
     /// Resolution to sample at
     #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -549,7 +540,7 @@ pub mod config {
     impl Default for AdcConfig {
         fn default() -> Self {
             Self {
-                clock: Clock::Pclk2_div_2,
+                clock: Clock::Hclk,
                 resolution: Resolution::Twelve,
                 align: Align::Right,
                 scan: Scan::Disabled,
@@ -557,7 +548,7 @@ pub mod config {
                 continuous: Continuous::Single,
                 dma: Dma::Disabled,
                 end_of_conversion_interrupt: Eoc::Disabled,
-                default_sample_time: SampleTime::Cycles_480,
+                default_sample_time: SampleTime::Cycles_239p5,
                 vdda: None,
             }
         }
@@ -946,12 +937,12 @@ macro_rules! adc {
 
 
                 /// Returns the current injected sample stored in the ADC data register
-                pub fn injected_sample(&self, seq : config::InjectedSequence) -> u16 {
+                pub fn injected_sample(&self, seq : config::InjectedSequence) -> i16 {
                     match seq {
-                        config::InjectedSequence::One      => self.adc_reg.jdat1().read().jdat1().bits(),
-                        config::InjectedSequence::Two      => self.adc_reg.jdat2().read().jdat2().bits(),
-                        config::InjectedSequence::Three    => self.adc_reg.jdat3().read().jdat3().bits(),
-                        config::InjectedSequence::Four     => self.adc_reg.jdat4().read().jdat4().bits(),
+                        config::InjectedSequence::One      => self.adc_reg.jdat1().read().jdat1().bits() as i16,
+                        config::InjectedSequence::Two      => self.adc_reg.jdat2().read().jdat2().bits() as i16,
+                        config::InjectedSequence::Three    => self.adc_reg.jdat3().read().jdat3().bits() as i16,
+                        config::InjectedSequence::Four     => self.adc_reg.jdat4().read().jdat4().bits() as i16,
                     }
                 }
 
@@ -976,19 +967,19 @@ macro_rules! adc {
                 }
 
                 /// Returns the current injected sample stored in the ADC data register
-                pub fn shift_injected_offset(&self, seq : config::InjectedSequence, offset : u16) {
+                pub fn shift_injected_offset(&self, seq : config::InjectedSequence, offset : i16) {
                     match seq {
                         config::InjectedSequence::One => self.adc_reg.joffset1().modify(|r,w| unsafe {  
-                            w.offsetjch1().bits(u16::wrapping_add(r.offsetjch1().bits() , offset)) 
+                            w.offsetjch1().bits(i16::wrapping_add(r.offsetjch1().bits() as i16, offset) as u16) 
                         }),
                         config::InjectedSequence::Two => self.adc_reg.joffset2().modify(|r,w| unsafe {  
-                            w.offsetjch2().bits(u16::wrapping_add(r.offsetjch2().bits() , offset)) 
+                            w.offsetjch2().bits(i16::wrapping_add(r.offsetjch2().bits() as i16 , offset) as u16) 
                         }),
                         config::InjectedSequence::Three => self.adc_reg.joffset3().modify(|r,w| unsafe {  
-                            w.offsetjch3().bits(u16::wrapping_add(r.offsetjch3().bits() , offset)) 
+                            w.offsetjch3().bits(i16::wrapping_add(r.offsetjch3().bits() as i16 , offset) as u16) 
                         }),
                         config::InjectedSequence::Four => self.adc_reg.joffset4().modify(|r,w| unsafe {  
-                            w.offsetjch4().bits(u16::wrapping_add(r.offsetjch4().bits() , offset)) 
+                            w.offsetjch4().bits(i16::wrapping_add(r.offsetjch4().bits() as i16 , offset) as u16) 
                         }),
                     }
                 }

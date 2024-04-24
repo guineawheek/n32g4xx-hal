@@ -12,7 +12,7 @@ use void::Void;
 
 use crate::pac::Rcc;
 
-use crate::rcc::{self, Clocks};
+use crate::rcc::{self, BusTimerClock, Clocks, Enable, Reset};
 use crate::time::{Hertz, MicroSecond};
 
 /// Timer wrapper
@@ -203,12 +203,11 @@ impl Instant {
         DWT::cycle_count().wrapping_sub(self.now)
     }
 }
-
 pub trait Instance: crate::Sealed + rcc::Enable + rcc::Reset + rcc::BusTimerClock {}
 
 impl<TIM> Timer<TIM>
 where
-    TIM: Instance,
+    TIM: Instance ,
 {
     /// Initialize timer
     pub fn new(tim: TIM, clocks: &Clocks) -> Self {
@@ -219,13 +218,13 @@ where
             TIM::enable(rcc);
             TIM::reset(rcc);
         }
-
         Self {
             clk: TIM::timer_clock(clocks),
             tim,
         }
     }
 }
+
 
 macro_rules! hal_ext_trgo {
     ($($TIM:ty: ($tim:ident, $mms:ident),)+) => {

@@ -133,6 +133,7 @@ bus! {
     Adc4 => (AHB, 15),
     Adc3 => (AHB, 14),
     Adc2 => (AHB, 13),
+    Sac => (AHB,11),
     Sdio => (AHB, 10),
     Dma2 => (AHB, 1),
 }
