@@ -873,3 +873,19 @@ pub struct Tx<I2C> {
 pub struct Rx<I2C> {
     i2c: PhantomData<I2C>,
 }
+
+impl<I2C> TransferPayload for Tx<I2C> 
+where 
+    I2C: Instance,
+{
+    fn start(&mut self) {}
+    fn stop(&mut self) {}
+}
+
+impl<I2C> TransferPayload for Rx<I2C> 
+where 
+    I2C: Instance,
+{
+    fn start(&mut self) {}
+    fn stop(&mut self) {}
+}
