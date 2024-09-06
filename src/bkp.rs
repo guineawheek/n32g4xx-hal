@@ -13,9 +13,7 @@
   Only the RTC functionality is currently implemented.
 */
 
-use n32g4::n32g455::Rcc;
-
-use crate::{pac::Bkp, rcc::Enable};
+use crate::{pac::{Bkp, Rcc}, rcc::Enable};
 
 /**
   The existence of this struct indicates that writing to the the backup
@@ -38,6 +36,11 @@ macro_rules! read_datax {
 }
 
 impl BackupDomain {
+    pub unsafe fn conjure() -> Self {
+        unsafe { Self { _regs: Bkp::steal() } }
+    }
+
+
     /// Read a 16-bit value from one of the DR1 to DR10 registers part of the
     /// Backup Data Register. The register argument is a zero based index to the
     /// DRx registers: 0 is DR1, up to 41 for DR42. Providing a number above 41

@@ -93,13 +93,22 @@ bus! {
     Dma1 => (AHB, 0),
 }
 
+#[cfg(any(feature = "n32g435",feature = "n32g455",feature = "n32g457"))]
+bus! {
+    Opamp => (APB1, 31),
+}
+
+#[cfg(not(feature = "n32g4fr"))]
+bus! {
+    Comp => (APB1, 6),
+}
+
 bus! {
     Pwr => (APB1, 28),
     I2c2 => (APB1, 22),
     I2c1 => (APB1, 21),
     Usart2 => (APB1, 17),
     Wwdg => (APB1, 11),
-    Comp => (APB1, 6),
     Tim6 => (APB1, 4),
     Tim5 => (APB1, 3),
     Tim4 => (APB1, 2),
@@ -165,12 +174,6 @@ bus! {
     Uart5 => (APB2, 18),
     Uart4 => (APB2, 17),
 }
-
-#[cfg(any(feature = "n32g435",feature = "n32g455",feature = "n32g457"))]
-bus! {
-    Opamp => (APB1, 31),
-}
-
 
 #[cfg(not(any(feature = "n32g401",feature = "n32g430")))]
 bus! {

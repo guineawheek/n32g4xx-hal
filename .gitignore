@@ -8,4 +8,4 @@ Cargo.lock
 book-target/
 
 .DS_Store
-.vscode/
+/.vscode/*

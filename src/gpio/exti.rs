@@ -1,7 +1,5 @@
-use n32g4::n32g455::Afio;
-
 use super::{marker, Edge, Pin, PinExt};
-use crate::pac::{Interrupt, Exti};
+use crate::pac::{Interrupt, Exti, Afio};
 
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     /// NVIC interrupt number of interrupt from this pin

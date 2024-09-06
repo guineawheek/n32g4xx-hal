@@ -29,13 +29,13 @@ targets = ["thumbv7em-none-eabihf"]
 [dependencies]
 defmt = { version = "0.3.5", optional = true }
 #bxcan = { version = "0.7", features = ["unstable-defmt"]}
-bxcan = {git = "ssh://git@github.com/Redux-Robotics/bxcan", branch = "main", features = ["unstable-defmt"]}
+bxcan = { package = "bxcan-ng", version = "0.8.0" }
 cortex-m = { version = "0.7.7", features = ["critical-section-single-core"]}
 cortex-m-rt = "0.7.3"
 nb = "1.1"
 rand_core = "0.6.4"
 n32g4 = { git = "ssh://git@github.com/Redux-Robotics/n32g4.git"}
-stm32-usbd = { version = "0.6.0"}
+stm32-usbd = { version = "0.7.0"}
 embedded-dma = "0.2.0"
 bare-metal = { version = "1" }
 void = { default-features = false, version = "1.0.2" }
@@ -53,7 +53,8 @@ rtic-monotonics = { version = "1.5", features = ["cortex-m-systick"], optional =
 rtic = { version = "2.0.1", features = ["thumbv7-backend"], optional = true }
 
 enumflags2 = "0.7.8"
-embedded-storage = "0.3"
+embedded-storage = "0.3.1"
+embedded-storage-async = "0.4.1"
 vcell = "0.1.3"
 document-features = "0.2"
 
@@ -107,9 +108,11 @@ features = ["macros"]
 #! `n32g401`, `n32g432`, `n32g435`, `n32g451`, `n32g452`, `n32g455`,
 #! `n32g457`, `n32g4fr`
 # Note: n32g4 has only one feature for some very similar device families,
-default = ["rt","n32g455"]
+default = ["rt"]
 rt = ["n32g4/rt"]
+
 n32g401 = ["n32g4/n32g401"]
+n32g430 = ["n32g4/n32g430"]
 n32g432 = ["n32g4/n32g432"]
 n32g435 = ["n32g4/n32g435"]
 n32g451 = ["n32g4/n32g451"]

@@ -57,13 +57,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
-name = "bxcan"
-version = "0.7.0"
-source = "git+ssh://git@github.com/Redux-Robotics/bxcan?branch=main#5ad53a49f84ebd9015b0a980676778a9cf989c34"
+name = "bxcan-ng"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2488c75bea7c00a71fc1334183a0f715a327efbefa587d81b0810d362da6d1bb"
 dependencies = [
  "bitflags",
- "defmt",
- "embedded-hal 0.2.7",
+ "embedded-can",
  "nb 1.1.0",
  "vcell",
 ]
@@ -270,6 +270,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "embedded-can"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9d2e857f87ac832df68fa498d18ddc679175cf3d2e4aa893988e5601baf9438"
+dependencies = [
+ "nb 1.1.0",
+]
+
+[[package]]
 name = "embedded-dma"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -325,6 +334,15 @@ name = "embedded-storage"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a21dea9854beb860f3062d10228ce9b976da520a73474aed3171ec276bc0c032"
+
+[[package]]
+name = "embedded-storage-async"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1763775e2323b7d5f0aa6090657f5e21cfa02ede71f5dc40eead06d64dcd15cc"
+dependencies = [
+ "embedded-storage",
+]
 
 [[package]]
 name = "enumflags2"
@@ -545,7 +563,7 @@ name = "n32g4xx-hal"
 version = "0.10.0"
 dependencies = [
  "bare-metal 1.0.0",
- "bxcan",
+ "bxcan-ng",
  "cast",
  "cortex-m",
  "cortex-m-rt",
@@ -563,6 +581,7 @@ dependencies = [
  "embedded-hal 1.0.0",
  "embedded-hal-nb",
  "embedded-storage",
+ "embedded-storage-async",
  "enumflags2",
  "ft6x06",
  "fugit",
@@ -587,7 +606,7 @@ dependencies = [
  "stm32-usbd",
  "systick-monotonic",
  "time",
- "usb-device 0.3.2",
+ "usb-device",
  "usbd-serial",
  "ushell",
  "vcell",
@@ -934,12 +953,12 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "stm32-usbd"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6c94998f166d66b210a164648a0b7866428d8f1e0740bf8a4c5edd89d4750c1"
+checksum = "ef05e917d856a39278e80c50e0b2afcd5dcbcb62ffeeed1a0895d01e6a44ff0d"
 dependencies = [
  "cortex-m",
- "usb-device 0.2.9",
+ "usb-device",
  "vcell",
 ]
 
@@ -1048,12 +1067,6 @@ checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 
 [[package]]
 name = "usb-device"
-version = "0.2.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f6cc3adc849b5292b4075fc0d5fdcf2f24866e88e336dd27a8943090a520508"
-
-[[package]]
-name = "usb-device"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98816b1accafbb09085168b90f27e93d790b4bfa19d883466b5e53315b5f06a6"
@@ -1071,7 +1084,7 @@ dependencies = [
  "embedded-hal 0.2.7",
  "embedded-io",
  "nb 1.1.0",
- "usb-device 0.3.2",
+ "usb-device",
 ]
 
 [[package]]
