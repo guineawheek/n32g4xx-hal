@@ -117,6 +117,7 @@ pub struct R;
 /// Write transfer
 pub struct W;
 
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ChannelStatus {
     TransferInProgress,
     TransferComplete,

@@ -1,7 +1,7 @@
 use core::{marker::PhantomData, mem::transmute};
 
 use super::{I2c, Instance};
-use crate::dma::{CompatibleChannel, DMAChannel, TransferPayload};
+use crate::dma::{ChannelStatus, CompatibleChannel, DMAChannel, TransferPayload};
 
 
 #[non_exhaustive]
@@ -15,7 +15,7 @@ pub enum Error {
 pub struct NoDMA;
 
 /// Callback type to notify user code of completion I2C transfers
-pub type I2cCompleteCallback = fn(Result<(), Error>);
+//pub type I2cCompleteCallback = fn(Result<(), Error>);
 
 pub trait I2CMasterWriteDMA {
     /// Writes `bytes` to slave with address `addr` in non-blocking mode
@@ -23,18 +23,14 @@ pub trait I2CMasterWriteDMA {
     /// # Arguments
     /// * `addr` - slave address
     /// * `bytes` - byte slice that need to send
-    /// * `callback` - callback that will be called on completion
     ///
     /// # Safety
-    /// This function relies on supplied slice `bytes` until `callback` called. So the slice must live until that moment.
+    /// This function relies on supplied slice `bytes` until the DMA completes (e.g. in the interrupt). So the slice must live until that moment.
     ///
-    /// # Warning
-    /// `callback` may be called before function returns value. It happens on errors in preparation stages.
     unsafe fn write_dma(
         &mut self,
         addr: u8,
         bytes: &[u8],
-        callback: Option<I2cCompleteCallback>,
     ) -> nb::Result<(), super::Error>;
 }
 
@@ -44,18 +40,14 @@ pub trait I2CMasterReadDMA {
     /// # Arguments
     /// * `addr` - slave address
     /// * `buf` - byte slice where received bytes will be written
-    /// * `callback` - callback that will be called on completion
     ///
     /// # Safety
-    /// This function relies on supplied slice `buf` until `callback` called. So the slice must live until that moment.
+    /// This function relies on supplied slice `buf` until the DMA completes (e.g. in the interrupt). So the slice must live until that moment.
     ///
-    /// # Warning
-    /// `callback` may be called before function returns value. It happens on errors in preparation stages.
     unsafe fn read_dma(
         &mut self,
         addr: u8,
         buf: &mut [u8],
-        callback: Option<I2cCompleteCallback>,
     ) -> nb::Result<(), super::Error>;
 }
 
@@ -66,10 +58,9 @@ pub trait I2CMasterWriteReadDMA {
     /// * `addr` - slave address
     /// * `bytes` - byte slice that need to send
     /// * `buf` - byte slice where received bytes will be written
-    /// * `callback` - callback that will be called on completion
     ///
     /// # Safety
-    /// This function relies on supplied slices `bytes` and `buf` until `callback` called. So slices must live until that moment.
+    /// This function relies on supplied slices `bytes` and `buf` until the DMA completion interrupt is triggered. So slices must live until that moment.
     ///
     /// # Warning
     /// `callback` may be called before function returns value. It happens on errors in preparation stages.
@@ -78,14 +69,13 @@ pub trait I2CMasterWriteReadDMA {
         addr: u8,
         bytes: &[u8],
         buf: &mut [u8],
-        callback: Option<I2cCompleteCallback>,
     ) -> nb::Result<(), super::Error>;
 }
 
 /// Trait with handle interrupts functions
 pub trait I2CMasterHandleIT {
-    fn handle_dma_interrupt(&mut self);
-    fn handle_error_interrupt(&mut self);
+    fn handle_dma_interrupt(&mut self) -> Result<ChannelStatus, Error>;
+    fn handle_error_interrupt(&mut self) -> Result<(), Error>;
 }
 
 impl<I2C: Instance,PINS> I2c<I2C,PINS> {
@@ -101,13 +91,13 @@ impl<I2C: Instance,PINS> I2c<I2C,PINS> {
 
         I2CMasterDma {
             hal_i2c: self,
-            callback: None,
 
             address: 0,
             rx_len: 0,
 
             tx,
             rx,
+            state: I2CMasterDmaState::Idle,
         }
     }
 
@@ -125,13 +115,13 @@ impl<I2C: Instance,PINS> I2c<I2C,PINS> {
 
         I2CMasterDma {
             hal_i2c: self,
-            callback: None,
 
             address: 0,
             rx_len: 0,
 
             tx,
             rx,
+            state: I2CMasterDmaState::Idle,
         }
     }
 
@@ -149,15 +139,23 @@ impl<I2C: Instance,PINS> I2c<I2C,PINS> {
 
         I2CMasterDma {
             hal_i2c: self,
-            callback: None,
 
             address: 0,
             rx_len: 0,
 
             tx,
             rx,
+            state: I2CMasterDmaState::Idle,
         }
     }
+}
+
+#[derive(Copy, Clone)]
+enum I2CMasterDmaState {
+    Idle,
+    Write,
+    Read,
+    WriteRead(usize, usize), // address for the read
 }
 
 /// I2c abstraction that can work in non-blocking mode by using DMA
@@ -177,7 +175,7 @@ where
 {
     hal_i2c: I2c<I2C,PINS>,
 
-    callback: Option<I2cCompleteCallback>,
+    state: I2CMasterDmaState,
 
     /// Last address used in `write_read_dma` method
     address: u8,
@@ -355,11 +353,6 @@ where
     TX_TRANSFER: DMATransfer<&'static [u8]>,
     RX_TRANSFER: DMATransfer<&'static mut [u8]>,
 {
-    fn call_callback_once(&mut self, res: Result<(), Error>) {
-        if let Some(c) = self.callback.take() {
-            c(res);
-        }
-    }
 
     /// Checks if there is communication in progress
     #[inline(always)]
@@ -555,7 +548,7 @@ where
         }
     }
 
-    fn finish_transfer_with_result(&mut self, result: Result<(), Error>) {
+    fn finish_transfer_with_result(&mut self, result: Result<(), Error>) -> Result<(), Error> {
         self.disable_dma_requests();
         self.disable_error_interrupt_generation();
         self.hal_i2c.i2c.ctrl2().modify(|_, w| w.dmalast().clear_bit());
@@ -564,8 +557,6 @@ where
             self.send_stop();
         }
 
-        self.call_callback_once(result);
-
         if self.tx.created() {
             self.tx.destroy_transfer();
         }
@@ -573,6 +564,7 @@ where
         if self.rx.created() {
             self.rx.destroy_transfer();
         }
+        result
     }
 }
 
@@ -584,11 +576,11 @@ where
     TXCH: DMAChannel + CompatibleChannel<I2C, crate::dma::R>,
     Tx<I2C>: TransferPayload,
 {
-    fn handle_dma_interrupt(&mut self) {
+    fn handle_dma_interrupt(&mut self) -> Result<ChannelStatus, Error> {
         if let Some(_) = &mut self.tx.tx_transfer {
             match self.tx.tx_channel.status() {
-                crate::dma::ChannelStatus::TransferInProgress => (),
-                crate::dma::ChannelStatus::TransferComplete => {
+                ChannelStatus::TransferInProgress => Ok(ChannelStatus::TransferInProgress),
+                ChannelStatus::TransferComplete => {
                     self.tx.tx_channel.clear_flag(crate::dma::Event::TransferComplete);
 
                     self.finish_transfer_with_result(Ok(()));
@@ -597,22 +589,28 @@ where
                     while self.hal_i2c.i2c.sts1().read().bytef().bit_is_clear() {}
     
                     self.send_stop();
+                    self.state = I2CMasterDmaState::Idle;
+                    Ok(ChannelStatus::TransferComplete)
     
                 },
-                crate::dma::ChannelStatus::TransferError => {
+                ChannelStatus::TransferError => {
                     self.tx.tx_channel.clear_flag(crate::dma::Event::TransferError);
                     self.finish_transfer_with_result(Err(Error::TransferError));
-    
+                    self.state = I2CMasterDmaState::Idle;
+                    Err(Error::TransferError)
                 },
             }
+        } else {
+            Ok(ChannelStatus::TransferComplete) // TODO: is this what we semantically want?
         }
     }
 
-    fn handle_error_interrupt(&mut self) {
+    fn handle_error_interrupt(&mut self) -> Result<(), Error> {
         let res = self.hal_i2c.check_and_clear_error_flags();
         if let Err(e) = res {
-            self.finish_transfer_with_result(Err(Error::I2CError(e)));
-        }
+            self.state = I2CMasterDmaState::Idle;
+            self.finish_transfer_with_result(Err(Error::I2CError(e)))
+        } else { Ok(()) }
     }
 }
 
@@ -624,12 +622,12 @@ where
     RXCH: DMAChannel + crate::dma::CompatibleChannel<I2C, crate::dma::W>,
     Rx<I2C>: TransferPayload,
 {
-    fn handle_dma_interrupt(&mut self) {
+    fn handle_dma_interrupt(&mut self) -> Result<ChannelStatus, Error> {
 
         if let Some(_) = &mut self.rx.rx_transfer {
             match self.rx.rx_channel.status() {
-                crate::dma::ChannelStatus::TransferInProgress => (),
-                crate::dma::ChannelStatus::TransferComplete => {
+                ChannelStatus::TransferInProgress => Ok(ChannelStatus::TransferInProgress),
+                ChannelStatus::TransferComplete => {
                     self.rx.rx_channel.clear_flag(crate::dma::Event::TransferComplete);
 
                     self.finish_transfer_with_result(Ok(()));
@@ -638,22 +636,27 @@ where
                     self.hal_i2c.i2c.ctrl1().modify(|_, w| w.acken().clear_bit());
     
                     self.send_stop();
-        
+                    self.state = I2CMasterDmaState::Idle;
+                    Ok(ChannelStatus::TransferComplete)
                 },
                 crate::dma::ChannelStatus::TransferError => {
                     self.rx.rx_channel.clear_flag(crate::dma::Event::TransferError);
+                    self.state = I2CMasterDmaState::Idle;
                     self.finish_transfer_with_result(Err(Error::TransferError));
-    
+                    Err(Error::TransferError)
                 },
             }
+        } else {
+            Ok(ChannelStatus::TransferComplete) // TODO: semantics good?
         }
     }
 
-    fn handle_error_interrupt(&mut self) {
+    fn handle_error_interrupt(&mut self) -> Result<(), Error> {
         let res = self.hal_i2c.check_and_clear_error_flags();
         if let Err(e) = res {
-            self.finish_transfer_with_result(Err(Error::I2CError(e)));
-        }
+            self.state = I2CMasterDmaState::Idle;
+            self.finish_transfer_with_result(Err(Error::I2CError(e)))
+        } else { Ok(()) }
     }
 }
 
@@ -668,7 +671,7 @@ where
     RXCH: DMAChannel + crate::dma::CompatibleChannel<I2C, crate::dma::W>,
     Rx<I2C>: TransferPayload,
 {
-    fn handle_dma_interrupt(&mut self) {
+    fn handle_dma_interrupt(&mut self) -> Result<ChannelStatus, Error> {
         // Handle Transmit
         if let Some(_) = &mut self.tx.tx_transfer {
             let status = self.tx.tx_channel.status();
@@ -679,22 +682,30 @@ where
 
                     // If we have prepared Rx Transfer, there are write_read command, generate restart signal and do not disable DMA requests
                     // Indicate that we have read after this transmit
-                    let have_read_after = self.rx.rx_transfer.is_some();
+                    let have_read_after = match self.state {
+                        I2CMasterDmaState::WriteRead(ptr, len) => Some(unsafe { 
+                            core::slice::from_raw_parts_mut(&mut *(ptr as *mut u8), len) 
+                        }),
+                        _ => None,
+                    };
     
                     self.tx.destroy_transfer();
-                    if !have_read_after {
-                        self.finish_transfer_with_result(Ok(()));
+                    if have_read_after.is_none() {
+                        self.finish_transfer_with_result(Ok(())).ok();
+                        self.state = I2CMasterDmaState::Idle;
                     }
     
                     // Wait for BTF
                     while self.hal_i2c.i2c.sts1().read().bytef().bit_is_clear() {}
     
                     // If we have prepared Rx Transfer, there are write_read command, generate restart signal
-                    if have_read_after {
+                    if let Some(buf) = have_read_after {
+                        self.rx.create_transfer(buf);
                         // Prepare for reading
                         if let Err(e) = self.prepare_read(self.address, self.rx_len) {
-                            self.finish_transfer_with_result(Err(Error::I2CError(e)))
+                            self.finish_transfer_with_result(Err(Error::I2CError(e)))?;
                         }
+                        self.state = I2CMasterDmaState::Read;
     
                         self.rx.rx_channel.start();
                     } else {
@@ -702,15 +713,15 @@ where
                     }
     
                 }
-                crate::dma::ChannelStatus::TransferError => {
-                    self.tx.tx_channel.clear_flag(crate::dma::Event::TransferComplete);
-                    self.finish_transfer_with_result(Err(Error::TransferError));
+                ChannelStatus::TransferError => {
+                    self.tx.tx_channel.clear_flag(crate::dma::Event::TransferError);
+                    self.finish_transfer_with_result(Err(Error::TransferError))?;
                 },
             };
 
             // If Transmit handled then receive should not be handled even if exists.
             // This return protects for handling Tx and Rx events in one interrupt.
-            return;
+            return Ok(ChannelStatus::TransferComplete);
         }
 
         if let Some(_) = &mut self.rx.rx_transfer {
@@ -721,7 +732,7 @@ where
                 crate::dma::ChannelStatus::TransferComplete => {
                     self.rx.rx_channel.clear_flag(crate::dma::Event::TransferComplete);
 
-                    self.finish_transfer_with_result(Ok(()));
+                    self.finish_transfer_with_result(Ok(())).ok();
     
                     // Clear ACK
                     self.hal_i2c.i2c.ctrl1().modify(|_, w| w.acken().clear_bit());
@@ -731,19 +742,19 @@ where
                 },
                 crate::dma::ChannelStatus::TransferError => {
                     self.rx.rx_channel.clear_flag(crate::dma::Event::TransferError);
-                    self.finish_transfer_with_result(Err(Error::TransferError));
+                    self.finish_transfer_with_result(Err(Error::TransferError))?;
 
                 },
             };
-
         }
+        Ok(ChannelStatus::TransferComplete)
     }
 
-    fn handle_error_interrupt(&mut self) {
+    fn handle_error_interrupt(&mut self) -> Result<(), Error> {
         let res = self.hal_i2c.check_and_clear_error_flags();
         if let Err(e) = res {
-            self.finish_transfer_with_result(Err(Error::I2CError(e)));
-        }
+            self.finish_transfer_with_result(Err(Error::I2CError(e)))
+        } else { Ok(()) }
     }
 }
 
@@ -761,7 +772,6 @@ where
         &mut self,
         addr: u8,
         bytes: &[u8],
-        callback: Option<I2cCompleteCallback>,
     ) -> nb::Result<(), super::Error> {
         self.busy_res()?;
 
@@ -769,13 +779,12 @@ where
         self.enable_dma_requests();
         let static_bytes: &'static [u8] = transmute(bytes);
         self.tx.create_transfer(static_bytes);
-        self.callback = callback;
 
         if let Err(e) = self.prepare_write(addr) {
             // Reset struct on errors
-            self.finish_transfer_with_result(Err(Error::I2CError(e)));
-            return Err(nb::Error::Other(e));
+            self.finish_transfer_with_result(Err(Error::I2CError(e))).map_err(|_| nb::Error::Other(e))?;
         }
+        self.state = I2CMasterDmaState::Write;
 
         // Start DMA processing
         self.tx.tx_channel.start();
@@ -799,7 +808,6 @@ where
         &mut self,
         addr: u8,
         buf: &mut [u8],
-        callback: Option<I2cCompleteCallback>,
     ) -> nb::Result<(), super::Error> {
         self.busy_res()?;
 
@@ -809,13 +817,12 @@ where
         self.enable_dma_requests();
         let static_buf: &'static mut [u8] = transmute(buf);
         self.rx.create_transfer(static_buf);
-        self.callback = callback;
 
         if let Err(e) = self.prepare_read(addr, buf_len) {
             // Reset struct on errors
-            self.finish_transfer_with_result(Err(Error::I2CError(e)));
-            return Err(nb::Error::Other(e));
+            self.finish_transfer_with_result(Err(Error::I2CError(e))).map_err(|_| nb::Error::Other(e))?;
         }
+        self.state = I2CMasterDmaState::Read;
 
         // Start DMA processing
         self.rx.rx_channel.start();
@@ -839,24 +846,25 @@ where
         addr: u8,
         bytes: &[u8],
         buf: &mut [u8],
-        callback: Option<I2cCompleteCallback>,
     ) -> nb::Result<(), super::Error> {
         self.busy_res()?;
 
         self.address = addr;
         self.rx_len = buf.len();
 
-        self.enable_dma_requests();
+        self.enable_dma_requests(); // enables i2c_ctrl2.dmaen
         let static_bytes: &'static [u8] = transmute(bytes);
         self.tx.create_transfer(static_bytes);
-        let static_buf: &'static mut [u8] = transmute(buf);
-        self.rx.create_transfer(static_buf);
-        self.callback = callback;
+
+        // TODO: deal with
+        //let static_buf: &'static mut [u8] = transmute(buf);
+        //self.rx.create_transfer(static_buf);
+        // this punts setting up the rx dma until after the tx dma completes
+        self.state = I2CMasterDmaState::Write; //WriteRead(buf.as_ptr() as usize, buf.len());
 
         if let Err(e) = self.prepare_write(addr) {
             // Reset struct on errors
-            self.finish_transfer_with_result(Err(Error::I2CError(e)));
-            return Err(nb::Error::Other(e));
+            self.finish_transfer_with_result(Err(Error::I2CError(e))).map_err(|_| nb::Error::Other(e))?;
         }
 
         // Start DMA processing

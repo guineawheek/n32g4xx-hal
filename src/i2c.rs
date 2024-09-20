@@ -76,6 +76,7 @@ pub struct I2c<I2C: Instance, PINS>
 
 pub use embedded_hal::i2c::NoAcknowledgeSource;
 
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 #[non_exhaustive]
 pub enum Error {
@@ -144,6 +145,16 @@ impl Pins<pac::I2c2>
     )
 {
     const REMAP: bool = false;
+}
+
+// editor's note: the rmp register docs in the user guide claims this is pc4 but this is a typo
+impl Pins<pac::I2c2>
+    for (
+        gpio::PA4<Alternate<OpenDrain>>,
+        gpio::PA5<Alternate<OpenDrain>>,
+    )
+{
+    const REMAP: bool = true;
 }
 
 
