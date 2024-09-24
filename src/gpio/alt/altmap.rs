@@ -1225,3 +1225,171 @@ pub mod tim1 {
     }
 
 }
+
+
+pub mod tim8 {
+    use super::*;
+    use crate::gpio::{self, PushPull};
+    use crate::{gpio::alt::altmap::pin, pac::Tim8 as TIM};
+
+    pub struct TIM8NoRemapRemapper();
+
+    pub struct TIM8PartialRemapRemapper();
+
+    pub struct TIM8FullRemapRemapper();
+
+    impl Remap for TIM8NoRemapRemapper {
+        fn remap( afio : &mut crate::pac::Afio) {
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.tim8_rmp().bits(0)})
+        }
+    }
+
+    impl Remap for TIM8PartialRemapRemapper {
+        fn remap( afio : &mut crate::pac::Afio) {
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.tim8_rmp().bits(1)})
+        }
+    }
+
+
+
+    impl Remap for TIM8FullRemapRemapper {
+        fn remap( afio : &mut crate::pac::Afio) {
+            afio.rmp_cfg3().modify(|_,w| unsafe { w.tim8_rmp().bits(3)})
+        }
+    }
+
+    impl RemapIO<TIM,TIM8NoRemapRemapper> for crate::gpio::PA0 {
+    }
+    impl RemapIO<TIM,TIM8NoRemapRemapper> for crate::gpio::PC6 {
+    }
+    impl RemapIO<TIM,TIM8NoRemapRemapper> for crate::gpio::PC7 {
+    }
+    impl RemapIO<TIM,TIM8NoRemapRemapper> for crate::gpio::PC8 {
+    }
+    impl RemapIO<TIM,TIM8NoRemapRemapper> for crate::gpio::PC9 {
+    }
+    impl RemapIO<TIM,TIM8NoRemapRemapper> for crate::gpio::PA6 {
+    }
+    impl RemapIO<TIM,TIM8NoRemapRemapper> for crate::gpio::PA7 {
+    }
+    impl RemapIO<TIM,TIM8NoRemapRemapper> for crate::gpio::PB0 {
+    }
+    impl RemapIO<TIM,TIM8NoRemapRemapper> for crate::gpio::PB1 {
+    }
+
+
+    impl RemapIO<TIM,TIM8PartialRemapRemapper> for crate::gpio::PB4 {
+    }
+    impl RemapIO<TIM,TIM8PartialRemapRemapper> for crate::gpio::PC6 {
+    }
+    impl RemapIO<TIM,TIM8PartialRemapRemapper> for crate::gpio::PC7 {
+    }
+    impl RemapIO<TIM,TIM8PartialRemapRemapper> for crate::gpio::PC8 {
+    }
+    impl RemapIO<TIM,TIM8PartialRemapRemapper> for crate::gpio::PC9 {
+    }
+    impl RemapIO<TIM,TIM8PartialRemapRemapper> for crate::gpio::PB3 {
+    }
+    impl RemapIO<TIM,TIM8PartialRemapRemapper> for crate::gpio::PA15 {
+    }
+    impl RemapIO<TIM,TIM8PartialRemapRemapper> for crate::gpio::PC12 {
+    }
+    impl RemapIO<TIM,TIM8PartialRemapRemapper> for crate::gpio::PD2 {
+    }
+
+    impl RemapIO<TIM,TIM8FullRemapRemapper> for crate::gpio::PB4 {
+    }
+    impl RemapIO<TIM,TIM8FullRemapRemapper> for crate::gpio::PD14 {
+    }
+    impl RemapIO<TIM,TIM8FullRemapRemapper> for crate::gpio::PD15 {
+    }
+    impl RemapIO<TIM,TIM8FullRemapRemapper> for crate::gpio::PC8 {
+    }
+    impl RemapIO<TIM,TIM8FullRemapRemapper> for crate::gpio::PC9 {
+    }
+    impl RemapIO<TIM,TIM8FullRemapRemapper> for crate::gpio::PB3 {
+    }
+    impl RemapIO<TIM,TIM8FullRemapRemapper> for crate::gpio::PA15 {
+    }
+    impl RemapIO<TIM,TIM8FullRemapRemapper> for crate::gpio::PC12 {
+    }
+    impl RemapIO<TIM,TIM8FullRemapRemapper> for crate::gpio::PD2 {
+    }
+
+
+    pin! {
+        <Ch1> default: PushPull for no:NoPin, [
+            PC6,
+            PD14,
+        ],
+
+        <Ch2> default: PushPull for no:NoPin, [
+            PC7,
+            PD15,
+        ],
+
+        <Ch3> default: PushPull for no:NoPin, [
+            PC8,
+        ],
+
+        <Ch4> default: PushPull for no:NoPin, [
+            PC9,
+        ],
+        <Ch1n> default: PushPull for no:NoPin, [
+            PA7,
+            PA15,
+        ],
+
+        <Ch2n> default: PushPull for no:NoPin, [
+            PB0,
+            PC12,
+        ],
+
+        <Ch3n> default: PushPull for no:NoPin, [
+            PB1,
+            PD2,
+        ],
+
+        <Etr> default: PushPull for no:NoPin, [
+            PA0,
+            PB4,
+        ],
+        <Bkin> default: Floating for no:NoPin, [
+            PA6,
+            PB3,
+        ],
+    }
+
+    impl TimCPin<0> for TIM {
+        type Ch<Otype> = Ch1<Otype>;
+    }
+
+    impl TimCPin<1> for TIM {
+        type Ch<Otype> = Ch2<Otype>;
+    }
+    
+    impl TimCPin<2> for TIM {
+        type Ch<Otype> = Ch3<Otype>;
+    }
+
+    impl TimCPin<3> for TIM {
+        type Ch<Otype> = Ch4<Otype>;
+    }
+
+    impl TimNCPin<0> for TIM {
+        type ChN<Otype> = Ch1n<Otype>;
+    }
+
+    impl TimNCPin<1> for TIM {
+        type ChN<Otype> = Ch2n<Otype>;
+    }
+    
+    impl TimNCPin<2> for TIM {
+        type ChN<Otype> = Ch3n<Otype>;
+    }
+
+    impl TimBkin for TIM {
+        type Bkin = Bkin;
+    }
+
+}
