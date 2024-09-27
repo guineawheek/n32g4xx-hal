@@ -155,6 +155,7 @@ pub struct Analog;
 /// JTAG/SWD mote (type state)
 pub type Debugger = Alternate<PushPull>;
 
+#[allow(unused)]
 pub(crate) mod marker {
     /// Marker trait that show if `ExtiPin` can be implemented
     pub trait Interruptible {}

@@ -551,7 +551,8 @@ checksum = "c3c8dda44ff03a2f238717214da50f65d5a53b45cd213a7370424ffdb6fae815"
 [[package]]
 name = "n32g4"
 version = "0.1.0"
-source = "git+ssh://git@github.com/Redux-Robotics/n32g4.git#d67ac3591cc09a94183c5de7b871670c6cb86328"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "304540c34f77996b630828a182c3cf7515c1edb2a8a333fe667f66e7b053be45"
 dependencies = [
  "cortex-m",
  "cortex-m-rt",

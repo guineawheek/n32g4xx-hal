@@ -170,11 +170,11 @@ macro_rules! uartCommon {
                 };
                 serial.tx.usart.set_stopbits(config.stopbits);
                 register_block.ctrl1().modify(|_,w| {
-                    w.wl().bit(config.wordlength == WordLength::DataBits9);
-                    w.pcen().bit(config.parity != Parity::ParityNone);
-                    w.psel().bit(config.parity == Parity::ParityOdd);
-                    w.txen().set_bit();
-                    w.rxen().set_bit()
+                    w.wl().bit(config.wordlength == WordLength::DataBits9)
+                     .pcen().bit(config.parity != Parity::ParityNone)
+                     .psel().bit(config.parity == Parity::ParityOdd)
+                     .txen().set_bit()
+                     .rxen().set_bit()
                 });
                 register_block.brcf().write(|w| unsafe { w.bits(div) });
                 register_block.ctrl1().modify(|_,w| {

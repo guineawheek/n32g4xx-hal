@@ -1,3 +1,5 @@
+
+
 use core::{marker::PhantomData, mem::transmute};
 
 use super::{I2c, Instance};
@@ -150,6 +152,7 @@ impl<I2C: Instance,PINS> I2c<I2C,PINS> {
     }
 }
 
+#[allow(unused)]
 #[derive(Copy, Clone)]
 enum I2CMasterDmaState {
     Idle,
@@ -158,6 +161,8 @@ enum I2CMasterDmaState {
     WriteRead(usize, usize), // address for the read
 }
 
+/// # WARNING: EVERYTHING ASSOCIATED WITH I2C DMA IS BROKEN. THIS IS AN ACTIVE AREA OF RESEARCH AND WILL CHANGE RAPIDLY.
+/// 
 /// I2c abstraction that can work in non-blocking mode by using DMA
 ///
 /// The struct should be used for sending/receiving bytes to/from slave device in non-blocking mode.
@@ -583,7 +588,7 @@ where
                 ChannelStatus::TransferComplete => {
                     self.tx.tx_channel.clear_flag(crate::dma::Event::TransferComplete);
 
-                    self.finish_transfer_with_result(Ok(()));
+                    self.finish_transfer_with_result(Ok(())).ok();
     
                     // Wait for BTF
                     while self.hal_i2c.i2c.sts1().read().bytef().bit_is_clear() {}
@@ -595,7 +600,7 @@ where
                 },
                 ChannelStatus::TransferError => {
                     self.tx.tx_channel.clear_flag(crate::dma::Event::TransferError);
-                    self.finish_transfer_with_result(Err(Error::TransferError));
+                    self.finish_transfer_with_result(Err(Error::TransferError)).ok();
                     self.state = I2CMasterDmaState::Idle;
                     Err(Error::TransferError)
                 },
@@ -630,7 +635,7 @@ where
                 ChannelStatus::TransferComplete => {
                     self.rx.rx_channel.clear_flag(crate::dma::Event::TransferComplete);
 
-                    self.finish_transfer_with_result(Ok(()));
+                    self.finish_transfer_with_result(Ok(())).ok();
 
                     // Clear ACK
                     self.hal_i2c.i2c.ctrl1().modify(|_, w| w.acken().clear_bit());
@@ -642,7 +647,7 @@ where
                 crate::dma::ChannelStatus::TransferError => {
                     self.rx.rx_channel.clear_flag(crate::dma::Event::TransferError);
                     self.state = I2CMasterDmaState::Idle;
-                    self.finish_transfer_with_result(Err(Error::TransferError));
+                    self.finish_transfer_with_result(Err(Error::TransferError)).ok();
                     Err(Error::TransferError)
                 },
             }

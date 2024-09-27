@@ -2,7 +2,7 @@
 edition = "2021"
 rust-version = "1.60"
 
-authors = ["Sparrowgrine <nxm@reduxrobotics.com>"]
+authors = ["Sparrowgrine <nxm@reduxrobotics.com>", "guineawheek <guineawheek@gmail.com>"]
 categories = [
     "embedded",
     "hardware-support",
@@ -21,6 +21,7 @@ name = "n32g4xx-hal"
 readme = "README.md"
 repository = "https://github.com/Redux-Robotics/n32g4xx-hal"
 version = "0.10.0"
+registry = ["redux-internal"]
 
 [package.metadata.docs.rs]
 features = ["n32g455", "rtic2", "defmt"]
@@ -34,7 +35,7 @@ cortex-m = { version = "0.7.7", features = ["critical-section-single-core"]}
 cortex-m-rt = "0.7.3"
 nb = "1.1"
 rand_core = "0.6.4"
-n32g4 = { git = "ssh://git@github.com/Redux-Robotics/n32g4.git"}
+n32g4 = "0.1.0"
 stm32-usbd = { version = "0.7.0"}
 embedded-dma = "0.2.0"
 bare-metal = { version = "1" }
@@ -132,7 +133,8 @@ rtic2 = ["dep:rtic-time", "dep:rtic-monotonics", "dep:rtic"]
 ## Implementation of `defmt::Format` for public enums and structures. See [defmt](https://crates.io/crates/defmt)
 defmt = ["dep:defmt", "fugit/defmt", "nb/defmt-0-3"]
 
-
+rng = []
+dac = []
 
 [profile.dev]
 debug = true
@@ -141,4 +143,4 @@ lto = true
 [profile.release]
 debug = true
 lto = true
-opt-level = "s"
+opt-level = "z"

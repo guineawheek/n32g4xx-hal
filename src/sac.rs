@@ -1,3 +1,7 @@
+#![allow(unused)]
+
+// TODO: unimplemented
+
 use crate::pac::Sac;
 use crate::rcc::{Enable,Reset};
 pub struct CryptoEngine {
