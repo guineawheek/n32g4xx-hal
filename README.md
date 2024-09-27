@@ -1,5 +1,10 @@
 # `n32g4xx-hal`
 
+# This HAL is very unpolished and much of its functionality Does Not Work or may require hacks accessing the PAC.
+
+APIs are subject to change quickly and rapidly.
+
+
 > [HAL] for the N32g4xx family of microcontrollers
 
 [hal]: https://crates.io/crates/embedded-hal

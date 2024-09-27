@@ -19,9 +19,8 @@ keywords = [
 license = "0BSD"
 name = "n32g4xx-hal"
 readme = "README.md"
-repository = "https://github.com/Redux-Robotics/n32g4xx-hal"
+repository = "https://github.com/guineawheek/n32g4xx-hal"
 version = "0.10.0"
-registry = ["redux-internal"]
 
 [package.metadata.docs.rs]
 features = ["n32g455", "rtic2", "defmt"]
