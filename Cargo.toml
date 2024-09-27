@@ -131,7 +131,7 @@ rtic1 = ["dep:rtic-monotonic", "dep:systick-monotonic", "cortex-m-rtic"]
 rtic2 = ["dep:rtic-time", "dep:rtic-monotonics", "dep:rtic"]
 
 ## Implementation of `defmt::Format` for public enums and structures. See [defmt](https://crates.io/crates/defmt)
-defmt = ["dep:defmt", "fugit/defmt", "nb/defmt-0-3"]
+defmt = ["dep:defmt", "fugit/defmt", "nb/defmt-0-3", "embedded-hal/defmt-03"]
 
 rng = []
 dac = []
