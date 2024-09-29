@@ -11,6 +11,7 @@
 #![feature(macro_metavar_expr)]
 #![feature(more_qualified_paths)]
 #![feature(adt_const_params)]
+#![feature(trivial_bounds)]
 
 use enumflags2::{BitFlag, BitFlags};
 
