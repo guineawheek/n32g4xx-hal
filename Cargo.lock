@@ -559,6 +559,7 @@ checksum = "304540c34f77996b630828a182c3cf7515c1edb2a8a333fe667f66e7b053be45"
 dependencies = [
  "cortex-m",
  "cortex-m-rt",
+ "critical-section",
  "vcell",
 ]
 
