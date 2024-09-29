@@ -286,10 +286,6 @@ pub const HSI: u32 = 16_000_000; // Hz
 /// Minimum system clock frequency
 pub const SYSCLK_MIN: u32 = 32_000_000;
 
-#[cfg(feature = "gpio-f446")]
-/// Minimum system clock frequency
-pub const SYSCLK_MIN: u32 = 12_500_000;
-
 #[cfg(feature = "n32g401")]
 /// Maximum system clock frequency
 pub const SYSCLK_MAX: u32 = 72_000_000;

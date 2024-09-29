@@ -1,12 +1,11 @@
 use crate::pac::Sac;
-use crate::rcc::{Enable,Reset};
 pub struct CryptoEngine {
-    pub(crate) regs: Sac,
+    pub(crate) _regs: Sac,
 }
 
 impl CryptoEngine {
-    pub fn new(regs: Sac) -> Self {
+    pub fn new(_regs: Sac) -> Self {
         // Sac::enable();
-        Self { regs }
+        Self { _regs }
     }
 }

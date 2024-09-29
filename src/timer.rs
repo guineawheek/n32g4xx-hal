@@ -12,7 +12,7 @@ use void::Void;
 
 use crate::pac::Rcc;
 
-use crate::rcc::{self, BusTimerClock, Clocks, Enable, Reset};
+use crate::rcc::{self, Clocks};
 use crate::time::{Hertz, MicroSecond};
 
 /// Timer wrapper
