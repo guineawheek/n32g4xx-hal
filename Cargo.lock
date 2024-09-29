@@ -555,12 +555,13 @@ source = "git+ssh://git@github.com/Redux-Robotics/n32g4.git#d67ac3591cc09a94183c
 dependencies = [
  "cortex-m",
  "cortex-m-rt",
+ "critical-section",
  "vcell",
 ]
 
 [[package]]
 name = "n32g4xx-hal"
-version = "0.10.0"
+version = "0.10.2"
 dependencies = [
  "bare-metal 1.0.0",
  "bxcan-ng",
