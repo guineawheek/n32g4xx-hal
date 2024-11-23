@@ -527,26 +527,26 @@ impl CFGR {
         rcc.cfg2().modify(|_,w| unsafe { w.adc1msel().variant(adc_1m_sel).adc1mpres().bits(adc_1m_pres as u8) });
 
         let (trng_1m_sel,trng_1m_pres) = match self.hse {
-            Some(2_000_000) => (true , 0b00000),
-            Some(4_000_000) => (true , 0b00010),
-            Some(6_000_000) => (true , 0b00100),
-            Some(8_000_000) => (true , 0b00110),
-            Some(10_000_000) => (true , 0b01000),
-            Some(12_000_000) => (true , 0b01010),
-            Some(14_000_000) => (true , 0b01100),
-            Some(16_000_000) => (true , 0b01110),
-            Some(18_000_000) => (true , 0b10000),
-            Some(20_000_000) => (true , 0b10010),
-            Some(22_000_000) => (true , 0b10100),
-            Some(24_000_000) => (true , 0b10110),
-            Some(26_000_000) => (true , 0b11000),
-            Some(28_000_000) => (true , 0b11010),
-            Some(30_000_000) => (true , 0b11100),
-            Some(32_000_000) => (true , 0b11110),
+            Some(2_000_000) => (true , 0b00001),
+            Some(4_000_000) => (true , 0b00011),
+            Some(6_000_000) => (true , 0b00101),
+            Some(8_000_000) => (true , 0b00111),
+            Some(10_000_000) => (true , 0b01001),
+            Some(12_000_000) => (true , 0b01011),
+            Some(14_000_000) => (true , 0b01101),
+            Some(16_000_000) => (true , 0b01111),
+            Some(18_000_000) => (true , 0b10001),
+            Some(20_000_000) => (true , 0b10011),
+            Some(22_000_000) => (true , 0b10101),
+            Some(24_000_000) => (true , 0b10111),
+            Some(26_000_000) => (true , 0b11001),
+            Some(28_000_000) => (true , 0b11011),
+            Some(30_000_000) => (true , 0b11101),
+            Some(32_000_000) => (true , 0b11111),
             _ => (false, 0b00110)
         };
         rcc.cfg2().modify(|_,w| unsafe { w.adchpres().bits(0b0001).adcpllpres().bits(0b10001)});
-        rcc.cfg3().modify(|_,w| unsafe { w.trng1msel().variant(trng_1m_sel).trng1mpres().bits(trng_1m_pres).trng1men().set_bit() });
+        rcc.cfg3().modify(|_,w| unsafe { w.trng1msel().variant(trng_1m_sel).trng1mpres().bits(trng_1m_pres) });
         rcc.cfg().modify(|_,w| {
             unsafe { w.usbpres().bits(usb_pres) }
         });

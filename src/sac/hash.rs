@@ -293,7 +293,7 @@ impl HashEngine {
         self.sac
     }
 
-    pub fn hash_start(mut self, hashtype: HashType) -> IncrementalHasher {
+    pub fn hash_start(self, hashtype: HashType) -> IncrementalHasher {
         // HASH_INIT
         let saccr_data : u32 = match hashtype {
             HashType::Sha1 | HashType::Sha224 | HashType::Sha256 | HashType::Sm3 => 0xd2,
