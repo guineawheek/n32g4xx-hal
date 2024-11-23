@@ -1,3 +1,5 @@
+#![allow(trivial_bounds)]
+
 pub mod altmap;
 macro_rules! extipin {
     ($( $(#[$attr:meta])* $PX:ident,)*) => {
