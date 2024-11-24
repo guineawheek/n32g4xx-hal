@@ -163,7 +163,7 @@ impl Crc32Engine {
 
             // Mark the scratch bytes as initialized, and then convert it to a
             // native-endian u32. Feed this into the CRC peripheral
-            self.regs.crc32dat().write(|w| w.bits(u32::from_ne_bytes(scratch.assume_init())));
+            self.regs.crc32dat().write(|w| w.bits(u32::from_be_bytes(scratch.assume_init())));
         });
         // If we had a non-multiple of four bytes...
         if !remainder.is_empty() {
@@ -174,7 +174,7 @@ impl Crc32Engine {
             // the 0..len range fills the LEAST significant bytes, leaving the
             // MOST significant bytes as zeroes
             scratch[..remainder.len()].copy_from_slice(remainder);
-            self.regs.crc32dat().write(|w| unsafe {w.bits(u32::from_ne_bytes(scratch))});
+            self.regs.crc32dat().write(|w| unsafe {w.bits(u32::from_be_bytes(scratch))});
         }
 
         self.regs.crc32dat().read().bits()
