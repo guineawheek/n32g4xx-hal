@@ -20,7 +20,7 @@ license = "0BSD"
 name = "n32g4xx-hal"
 readme = "README.md"
 repository = "https://github.com/guineawheek/n32g4xx-hal"
-version = "0.11.0"
+version = "0.11.1"
 
 [package.metadata.docs.rs]
 features = ["n32g455", "rtic2", "defmt"]

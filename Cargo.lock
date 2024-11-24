@@ -565,7 +565,7 @@ dependencies = [
 
 [[package]]
 name = "n32g4xx-hal"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "bare-metal 1.0.0",
  "bxcan-ng",
