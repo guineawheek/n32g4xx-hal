@@ -237,13 +237,6 @@ where
             // Enable and reset clock.
             I2C::enable_unchecked();
             I2C::reset_unchecked();
-            // depending on soft power cycle the device may be stuck in some weird busy state.
-            // this resets the device so that it continues to function.
-            let _sts1 = i2c.sts1().read();
-            let sts2 = i2c.sts2().read();
-            if sts2.busy().bit_is_set() {
-                i2c.ctrl1().modify(|_, w| w.swreset().set_bit());
-            }
         }
 
         let i2c = I2c { i2c, pins };
